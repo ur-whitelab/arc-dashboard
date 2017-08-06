@@ -1,0 +1,70 @@
+[
+  {
+    "_id": "p1",
+    "type": "process",
+    "name": "Simulation",
+    "status": "disabled",
+    "docker_id": null
+  },
+  {
+    "_id": "p2",
+    "type": "process",
+    "name": "Analysis",
+    "status": "ready",
+    "docker_id": "danalysis"    
+  },
+  {
+    "_id": "p3",
+    "type": "process",
+    "name": "Projection",
+    "status": "disabled",
+    "docker_id": null,
+    "cmd": "project_exe"
+  },
+  {
+    "_id": "p4",
+    "type": "process",
+    "name": "Camera",
+    "status": "ready",
+    "docker_id": null,    
+    "cmd": "camera_exe"
+  },
+  {
+    "_id": "p5",
+    "type": "process",
+    "name": "Vision",
+    "status": "ready",
+    "docker_id": "dvision"
+  },  
+  {
+    "_id": "cdocker",
+    "type": "config",
+    "create_options": {
+      "AttachStdin": false,
+      "AttachStdout": true,
+      "AttachStderr": true,
+      "Tty": true      
+    }    
+  },
+  {
+    "_id": "cnetwork",
+    "ports": {
+      "zmq": 4555,
+      "proxy": 8080      
+    } 
+  },
+  {
+    "_id": "danalysis",
+    "type": "docker",
+    "image": "jupyter/scipy-notebook",
+    "cmd": ["python3"],
+    "binds": [".:/home/jovyan"]
+  },
+  {
+    "_id": "dvision",
+    "type": "docker",
+    "image": "jupyter/scipy-notebook",
+    "cmd": ["python3"],
+    "binds": [".:/home/jovyan"]
+  }
+]
