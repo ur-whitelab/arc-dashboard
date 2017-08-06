@@ -11,7 +11,7 @@
     "type": "process",
     "name": "Analysis",
     "status": "ready",
-    "docker_id": "danalysis"    
+    "docker_id": "danalysis"
   },
   {
     "_id": "p3",
@@ -26,7 +26,7 @@
     "type": "process",
     "name": "Camera",
     "status": "ready",
-    "docker_id": null,    
+    "docker_id": null,
     "cmd": "camera_exe"
   },
   {
@@ -35,7 +35,7 @@
     "name": "Vision",
     "status": "ready",
     "docker_id": "dvision"
-  },  
+  },
   {
     "_id": "cdocker",
     "type": "config",
@@ -43,21 +43,21 @@
       "AttachStdin": false,
       "AttachStdout": true,
       "AttachStderr": true,
-      "Tty": true      
-    }    
+      "Tty": true
+    }
   },
   {
     "_id": "cnetwork",
     "ports": {
       "zmq": 4555,
-      "proxy": 8080      
-    } 
+      "proxy": 8080
+    }
   },
   {
     "_id": "danalysis",
     "type": "docker",
     "image": "jupyter/scipy-notebook",
-    "cmd": ["python3"],
+    "cmd": ["bash", "sleep 10", "&&", "tail -n10 /dev/random"],
     "binds": [".:/home/jovyan"]
   },
   {

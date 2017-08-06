@@ -18,7 +18,7 @@
             <span class="panel-icon">
               <i class="fa" :class="{ 'fa-ban': process.status == status.DISABLED, 'fa-server': process.status != status.DISABLED }"></i>
             </span>
-              {{process.name}}            
+              {{process.name}}
             </div>
             <div class="column">
               <template v-if="process.status == status.LOADING">
@@ -35,8 +35,6 @@
 </template>
 
 <script>
-
-const nodeProcess = require('process')
 
 var status = { READY: 'ready', DISABLED: 'disabled', LOADING: 'loading', RUNNING: 'running' }
 
@@ -70,8 +68,9 @@ export default {
 
       if (p.dokcer_id !== null) {
         this.startDockerProcess(p).then((result) => {
-          p.progress = 100
-          p.status = status.RUNNING
+          // will arrive here after exit. Reset
+          p.progress = 0
+          p.status = status.READY
           console.log(result)
         })
       } else {
@@ -88,7 +87,8 @@ export default {
       // process specific
       const pconfig = (await this.$db.findPromise({ _id: p.docker_id }))[0]
       // get latest image (if necessary)
-      /* might be necessary someday
+
+      /* I get a hang on this..
       await new Promise((resolve, reject) => {
         this.$docker.pull(pconfig.image, (err, stream) => {
           if (err)
@@ -97,21 +97,38 @@ export default {
             p.progress = Math.max(p.progress + 10, 75)
           })
         })
-      }) */
+      }).catch((reason) => { console.log(reason) }) */
       p.progress = 75
-      const container = await this.$docker.run(pconfig.image, pconfig.cmd, [nodeProcess.stdout], dconfig.create_options, {
-        'Hostconfig': {
-          'Binds': pconfig.binds
-        }
+      const opts = dconfig.create_options
+      opts.Image = pconfig.image
+      opts.Cmd = pconfig.cmd
+      opts.Hostconfig = {'Binds': pconfig.binds}
+      const container = await this.$docker.createContainer(opts)
+      container.attach({stream: true, stdout: true, stderr: true}, (err, s) => {
+        s.pipe(process.stdout)
+        if (err)
+          console.log(err)
       })
-      return container
+      p.container_id = container.id
+      container.inspect((e, d) => {
+        if (e)
+          console.log(e)
+        p.container_ip = d.NetworkSettings.IPAddress
+      })
+      p.progress = 100
+      p.status = status.RUNNING
+      await container.start()
+      await container.stop()
+      await container.remove()
+      p.container_id = null
+      p.container_ip = null
     }
   }
 }
 </script>
 
 <style lang="scss">
-  
+
   .panel-icon {
     vertical-align:baseline;
   }
@@ -125,7 +142,7 @@ export default {
     }
   }
 
-  .panel-block.loading .panel-block.running {
+  .panel-block.loading, .panel-block.running {
     &:hover {
       background-color: initial;
       color: initial;

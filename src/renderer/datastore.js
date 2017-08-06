@@ -5,7 +5,7 @@ const dbDefaults = require('./db-defaults')
 
 const db = new Datastore({
   autoload: true,
-  filename: path.join(remote.app.getPath('userData'), '/data.db')
+  filename: path.join(remote.app.getPath('userData'), '/artable/data.db')
 })
 
 // load defaults but do not override
