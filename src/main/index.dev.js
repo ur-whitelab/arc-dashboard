@@ -25,3 +25,6 @@ require('electron').app.on('ready', () => {
 
 // Require `main` process to boot app
 require('./index')
+
+import log from 'electron-log'
+log.transports.console.level = 'info'

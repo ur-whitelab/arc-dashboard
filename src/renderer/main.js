@@ -6,6 +6,7 @@ import router from './router'
 import store from './store'
 import db from './datastore'
 import Docker from 'dockerode'
+import log from 'electron-log'
 
 import 'bulma/css/bulma.css'
 import 'font-awesome/css/font-awesome'
@@ -25,6 +26,9 @@ else
   docker = new Docker({socketPath: '/var/run/docker.sock'})
 // make accessible
 Vue.prototype.$docker = docker
+
+// make log accessible
+Vue.prototype.$log = log
 
 /* eslint-disable no-new */
 new Vue({

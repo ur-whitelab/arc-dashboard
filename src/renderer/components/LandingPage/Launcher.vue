@@ -1,36 +1,26 @@
 <template>
   <div>
-    <nav class="panel">
-    <p class="panel-heading">
-        Launcher
-    </p>
-    <div class="panel-block">
-        <p class="control has-icons-left">
-        <input class="input is-small" type="text" placeholder="search">
-        <span class="icon is-small is-left">
-            <i class="fa fa-search"></i>
-        </span>
-        </p>
-    </div>
-        <template v-for="(process, index) in processes">
-          <a :id="index" class="columns panel-block is-marginless" :class="process.status" @click="startProcess(index)">
-            <div class="column is-one-quarter">
-            <span class="panel-icon">
-              <i class="fa" :class="{ 'fa-ban': process.status == status.DISABLED, 'fa-server': process.status != status.DISABLED }"></i>
+
+  <div class="tabs is-toggle">
+    <ul>
+      <template v-for="(process, index) in processes">
+        <li>
+          <a :id="index" class="process-tab"
+            :class="process.status"
+            @click="startProcess(index)">
+            <span class="icon is-small">
+              <i class="fa"
+              :class="{ 'fa-ban': process.status == status.DISABLED,
+              'fa-server': process.status == status.RUNNING ||  process.status == status.LOADING,
+              'fa-power-off': process.status == status.READY }">
+              </i>
             </span>
               {{process.name}}
-            </div>
-            <div class="column">
-              <template v-if="process.status == status.LOADING">
-                <progress class="progress notification is-warning" :value="process.progress" max="100">{{process.progress}}%</progress>
-              </template>
-              <template v-if="process.status == status.RUNNING">
-                <progress class="progress notification is-primary" :value="process.progress" max="100">{{process.progress}}%</progress>
-              </template>
-            </div>
           </a>
-        </template>
-    </nav>
+        </li>
+      </template>
+    </ul>
+  </div>
   </div>
 </template>
 
@@ -61,9 +51,8 @@ export default {
   methods: {
     startProcess: function (index) {
       const p = this.processes[index]
-      if (p.status === status.LOADING)
+      if (p.status !== status.READY)
         return
-      p.progress = 25
       p.status = status.LOADING
 
       if (p.dokcer_id !== null) {
@@ -75,7 +64,6 @@ export default {
         })
       } else {
         startExeProcess(p).then(() => {
-          p.progress = 100
           p.status = status.RUNNING
         })
       }
@@ -88,7 +76,7 @@ export default {
       const pconfig = (await this.$db.findPromise({ _id: p.docker_id }))[0]
       // get latest image (if necessary)
 
-      /* I get a hang on this..
+      /* I get a freeze on this..maybe doesn't check local image before pull
       await new Promise((resolve, reject) => {
         this.$docker.pull(pconfig.image, (err, stream) => {
           if (err)
@@ -98,10 +86,16 @@ export default {
           })
         })
       }).catch((reason) => { console.log(reason) }) */
-      p.progress = 75
       const opts = dconfig.create_options
       opts.Image = pconfig.image
       opts.Cmd = pconfig.cmd
+      // need to replace . with actual current directort
+      for (let i = 0; i < pconfig.binds.length; i++) {
+        if (pconfig.binds[i].split(':')[0] === '.') {
+          pconfig.binds[i] = process.cwd() + ':' + pconfig.binds[i].split(':')[1]
+          this.$log.info('Replacing . in bind to get ' + pconfig.binds[i])
+        }
+      }
       opts.Hostconfig = {'Binds': pconfig.binds}
       const container = await this.$docker.createContainer(opts)
       container.attach({stream: true, stdout: true, stderr: true}, (err, s) => {
@@ -115,10 +109,9 @@ export default {
           console.log(e)
         p.container_ip = d.NetworkSettings.IPAddress
       })
-      p.progress = 100
       p.status = status.RUNNING
       await container.start()
-      await container.stop()
+      await container.wait()
       await container.remove()
       p.container_id = null
       p.container_ip = null
@@ -129,36 +122,30 @@ export default {
 
 <style lang="scss">
 
-  .panel-icon {
+  .icon {
     vertical-align:baseline;
   }
 
-  .panel-block.disabled {
+  .process-tab.disabled {
     background-color: lightgray;
     &:hover {
-      background-color: lightgray;
-      color: inherit;
+      background-color: lightgray !important;
+      color: inherit !important;
       cursor: default;
+      border-color: lightgray !important;
     }
   }
 
-  .panel-block.loading, .panel-block.running {
-    &:hover {
-      background-color: initial;
-      color: initial;
-      cursor: default;
-    }
-  }
-
-  .panel-block.disabled  .panel-icon {
+  .process-tab.disabled  .icon {
     color: red;
   }
 
-  .panel-block.loading  .panel-icon {
+  .process-tab.loading  .icon {
     color: $warning;
   }
 
-  .panel-block.running  .panel-icon {
-    color: $primary;
+  .process-tab.running  .icon {
+    color: $success;
   }
+
 </style>
