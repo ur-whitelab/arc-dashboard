@@ -24,19 +24,19 @@
       <div class="container is-fluid">
         <div class="content has-text-centered">
           <p>
-            <img id="logo" src="static/URLogo.png" alt="university of rochester">
+            <img id="logo" src="static/URLogo.png" style="max-width: 50%;" alt="university of rochester">
           </p>
           <p>
-            <strong>AR Table Dashboard</strong> by <a class="open-in-browser" href="http://thewhitelab.org">The Whitelab</a> at  
+            <strong>AR Table Dashboard</strong> by <a class="open-in-browser" href="http://thewhitelab.org">The Whitelab</a> at
             <a class="open-in-browser" href="https://rochester.edu"> University of Rochester</a>
           </p>
         </div>
       </div>
-    </footer>  
+    </footer>
     <script>
       var shell = require('electron').shell
       document.querySelectorAll('.open-in-browser').forEach((e) => {
-          e.onclick = (event) => {          
+          e.onclick = (event) => {
             event.preventDefault()
             shell.openExternal(event.target.href)
           }

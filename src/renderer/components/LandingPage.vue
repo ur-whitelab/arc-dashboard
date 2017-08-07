@@ -1,24 +1,24 @@
-<template> 
+<template>
   <div>
-    <div class="container is-fluid">      
-        <section class="hero">          
+    <div class="container is-fluid">
+        <section class="hero">
           <div class="hero-body">
             <div class="container">
-              <h1 class="title">
+              <h1 class="title notification is-info">
                 AR Table Dashboard
               </h1>
-              <h2 class="subtitle">
+              <h2 class="subtitle notification">
                 Augmented reality table command & control center
               </h2>
             </div>
           </div>
-        </section>        
+        </section>
     </div>
     <section>
       <div class="container is-fluid">
         <div class="tile is-ancestor">
           <div class="tile is-4 is-parent">
-            <article class="is-child tile box notification is-info">
+            <article class="is-child tile box notification is-outlined">
               <p class="title">Start-up </p>
               <p> Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ornare magna eros, eu pellentesque tortor vestibulum ut. Maecenas non massa sem. Etiam finibus odio quis feugiat facilisis.
               </p>
