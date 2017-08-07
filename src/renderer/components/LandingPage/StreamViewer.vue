@@ -3,15 +3,18 @@
     <div class="has-text-centered">
       <h1> Output for <strong>{{processes.length == 0 || processes[index].name}}</strong> </h1>
     </div>
-    <code class="terminal">
-      {{text}}
-    </code>
+    <div class="">
+      <code class="terminal is-size-7">
+        {{text}}
+      </code>
+    </div>
   </div>
 </template>
 
 <script>
 
 const { Writable } = require('stream')
+import Convert from 'ansi-to-html'
 
 export default {
   name: 'streamViewer',
@@ -55,12 +58,10 @@ export default {
         // doesn't exist, need to create new stream
         this.$log.info('Processing a new output stream for ' + this.streamIndex)
         const myIndex = this.streamIndex
-        let buffer = []
+        let buffer = new Convert({ stream: true })
         let ws = new Writable({
           write (chunk, enc, next) {
             // add to my buffer
-            if (buffer.length > this.bufferMax)
-              buffer.split(0, 1)
 
             buffer.push(chunk)
 
