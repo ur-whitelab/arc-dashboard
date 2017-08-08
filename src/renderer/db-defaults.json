@@ -37,6 +37,26 @@
     ]
   },
   {
+    "_id": "pcustom",
+    "type": "process",
+    "name": "Custom",
+    "status": "ready",
+    "docker_id": null,
+    "cmd": [null, null],
+    "cmd_args": [
+      {
+        "name": "exe",
+        "description": "Executable",
+        "default": "ls"
+      },
+      {
+        "name": "arg",
+        "description": "Arguments",
+        "default": "-l"
+      }
+    ]
+  },
+  {
     "_id": "p5",
     "type": "process",
     "name": "Vision",
@@ -50,7 +70,7 @@
       "AttachStdin": false,
       "AttachStdout": true,
       "AttachStderr": true,
-      "Tty": false
+      "Tty": true
     }
   },
   {

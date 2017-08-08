@@ -44,7 +44,7 @@ export default {
     // a helper since this is needed both when a currentStatus changes and
     // index
     updateStream: function () {
-      if (this.currentStatus === this.status.RUNNING || this.currentStatus === this.status.LOADING) {
+      if (this.currentStatus !== this.status.DISABLED) {
         // check if a stream is available
         const p = this.processes[this.index]
         if (p.instances.length > 0) {
@@ -115,7 +115,9 @@ export default {
   color: $primary;
   padding: 1rem;
   max-height: 400px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: scroll;
+  width: 80ch;
 }
 
 .terminal-code {

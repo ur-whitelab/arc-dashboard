@@ -74,7 +74,6 @@
 
 <script>
 import StreamViewer from './StreamViewer'
-import _ from 'lodash'
 import merge from 'merge-stream'
 
 const { exec } = require('child_process')
@@ -147,8 +146,8 @@ export default {
       const ps = exec(cmd.join(' '))
       this.$log.info('Spawning with ' + cmd)
       const instId = ps.pid
-      p.instances.push(ps.pid)
-      p.readStreams[ps.pid] = merge(ps.stdout, ps.stderr)
+      p.instances.push(instId)
+      p.readStreams[instId] = merge(ps.stdout, ps.stderr)
       try {
         await new Promise((resolve, reject) => {
           ps.on('close', (code) => {
@@ -164,12 +163,13 @@ export default {
           ps.stdout.on('data', () => {
             p.status = status.RUNNING
           })
+          ps.stderr.on('data', () => {
+            p.status = status.RUNNING
+          })
         })
       } catch (err) {
         throw err
       } finally {
-        p.instances = _.remove(p.instances, instId)
-        delete p.readStreams.instId
         p.status = status.READY
       }
     },
@@ -214,8 +214,6 @@ export default {
       await container.remove()
       p.container_id = null
       p.container_ip = null
-      p.instances = _.remove(p.instances, instId)
-      delete p.readStreams.instId
       p.status = status.READY
     }
   },
