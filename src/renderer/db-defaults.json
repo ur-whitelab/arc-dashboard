@@ -27,7 +27,7 @@
     "name": "Camera",
     "status": "ready",
     "docker_id": null,
-    "cmd": ["clvc", null, "--sout", "''#transcode{vcodec=h264,vb=350,fps=8,scale=1,acodec=none}:standard{access=http ,mux=ts, dst=localhost:10030}'"],
+    "cmd": ["cvlc", null, "--sout", "'#transcode{vcodec=h264,vb=350,fps=8,scale=1,acodec=none}:standard{access=http ,mux=ts, dst=localhost:10030}'"],
     "cmd_args": [
       {
         "name": "video source",
@@ -50,7 +50,7 @@
       "AttachStdin": false,
       "AttachStdout": true,
       "AttachStderr": true,
-      "Tty": true
+      "Tty": false
     }
   },
   {

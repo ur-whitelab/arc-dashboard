@@ -1,7 +1,7 @@
 <template>
   <div>
 
-  <section class="section">
+  <div class="container is-fluid">
     <div class="tabs is-boxed is-centered process-tabs">
       <ul class="">
         <template v-for="(process, index) in processes">
@@ -22,43 +22,64 @@
         </template>
       </ul>
     </div>
-      <div class="container launcher">
-        <div class="columns is-gapless">
-        <div v-if="processes.length > 0" class="is-2 column">
-          <nav class="panel">
-            <p class="panel-heading"> controls </p>
-            <a :disabled="processes[activeProcess].status !== status.READY"
-            class="button panel-block is-success control-launch"
-            @click="startProcess(activeProcess)">
-              <span class="panel-icon">
-                <i class="fa fa-play"></i>
-              </span>
-              Launch {{processes[activeProcess].name}}
-            </a>
-          </nav>
-        </div>
-        <div class="column">
-          <stream-viewer :status="status"
-            :processes="processes"
-            :currentStatus="currentStatus"
-            :index="activeProcess">
-          </stream-viewer>
-        </div>
+  </div>
+    <div class="container is-fluid launcher">
+      <div class="columns is-gapless">
+      <div v-if="processes.length > 0" class="is-half-mobile is-one-third-tablet is-one-quarter-desktop column">
+        <nav class="panel">
+          <p class="panel-heading"> parameters </p>
+            <template v-for="arg in argInput">
+              <p class="arg-description panel-block">
+                <label> {{arg.description}}</label>
+              </p>
+              <div class="panel-block">
+                <p class="control has-icons-left">
+
+                  <input onClick="this.select();"
+                    class="input is-small" type="text"
+                    v-model="arg.default"
+                    v-on:keyup.13="processes[activeIndex].cmd_args[arg.index] = $event.target.value">
+                  <span class="icon is-small is-left">
+                    <i class="fa fa-arrow-up"></i>
+                  </span>
+
+                </p>
+              </div>
+            </template>
+
+          <a :disabled="processes[activeProcess].status !== status.READY"
+          class="button panel-block is-success control-launch"
+          @click="startProcess(activeProcess)">
+            <span class="panel-icon">
+              <i class="fa fa-play"></i>
+            </span>
+            Launch {{processes[activeProcess].name}}
+          </a>
+        </nav>
+      </div>
+      <div class="column">
+        <div>
+        <stream-viewer :status="status"
+          :processes="processes"
+          :currentStatus="currentStatus"
+          :index="activeProcess">
+        </stream-viewer>
         </div>
       </div>
-    </section>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script>
 import StreamViewer from './StreamViewer'
 import _ from 'lodash'
+import merge from 'merge-stream'
+
+const { exec } = require('child_process')
 
 var status = { READY: 'ready', DISABLED: 'disabled', LOADING: 'loading', RUNNING: 'running' }
-
-async function startExeProcess (p) {
-  return null
-}
 
 export default {
   name: 'launcher',
@@ -67,7 +88,9 @@ export default {
     return {
       status: status,
       processes: [],
-      activeProcess: 0
+      activeProcess: 0,
+      argInput: [],
+      argValues: []
     }
   },
 
@@ -104,17 +127,53 @@ export default {
         return
       p.status = status.LOADING
 
-      if (p.dokcer_id !== null) {
-        this.startDockerProcess(p).then((result) => {
-          // will arrive here after exit. Reset
-          p.status = status.READY
+      if (p.docker_id !== null)
+        this.startDockerProcess(p)
+      else
+        this.startExeProcess(p)
+    },
+
+    startExeProcess: async function (p) {
+      // build command string
+      let cmd = []
+      let j = 0
+      for (let i = 0; i < p.cmd.length; i++) {
+        if (p.cmd[i] === null)
+          cmd.push(this.argInput[j++].default)
+        else
+          cmd.push(p.cmd[i])
+      }
+      p.status = status.LOADING
+      const ps = exec(cmd.join(' '))
+      this.$log.info('Spawning with ' + cmd)
+      const instId = ps.pid
+      p.instances.push(ps.pid)
+      p.readStreams[ps.pid] = merge(ps.stdout, ps.stderr)
+      try {
+        await new Promise((resolve, reject) => {
+          ps.on('close', (code) => {
+            if (code !== 0) {
+              this.$log.warn()
+              reject(Error(cmd + ' ended with code ' + code))
+            }
+            resolve()
+          })
+          ps.on('error', (err) => {
+            reject(err)
+          })
+          ps.stdout.on('data', () => {
+            p.status = status.RUNNING
+          })
         })
-      } else {
-        startExeProcess(p).then(() => {
-          p.status = status.RUNNING
-        })
+      } catch (err) {
+        throw err
+      } finally {
+        p.instances = _.remove(p.instances, instId)
+        delete p.readStreams.instId
+        p.status = status.READY
       }
     },
+
     startDockerProcess: async function (p) {
       // load what's in our DB and turn it into a docker run command
       // default
@@ -133,7 +192,7 @@ export default {
         }
       }
       opts.Hostconfig = {'Binds': pconfig.binds}
-
+      this.$log.info('Creating container with ' + JSON.stringify(opts))
       const container = await this.$docker.createContainer(opts)
 
       // add this container to the list of instances
@@ -157,12 +216,28 @@ export default {
       p.container_ip = null
       p.instances = _.remove(p.instances, instId)
       delete p.readStreams.instId
+      p.status = status.READY
     }
   },
   watch: {
     activeProcess: function (newV, oldV) {
-      if (this.processes[newV].status === status.DISABLED)
+      const p = this.processes[newV]
+      if (p.status === status.DISABLED)
         this.activeProcess = oldV
+      // process argument string
+      this.argInput = []
+      if ('cmd' in p) {
+        let j = 0
+        for (let i = 0; i < p.cmd.length; i++) {
+          if (p.cmd[i] === null) {
+            // add j so we can reference latter
+            const a = p.cmd_args[j]
+            a.index = j
+            this.argInput.push(a)
+            j++
+          }
+        }
+      }
     }
   }
 }
@@ -198,7 +273,7 @@ export default {
 
   .launcher .columns {
     margin: 0rem;
-    padding: 2rem 2rem 2rem;
+    padding: 2rem 2rem 2rem 2rem;
     border-left: solid 1px lightgray;
     border-bottom: solid 1px lightgray;
     border-right: solid 1px lightgray;
@@ -206,6 +281,14 @@ export default {
 
   .process-tabs,.tabs:not(:last-child) {
     margin-bottom: inherit;
+  }
+
+  .panel {
+    margin-top:1.5rem;
+  }
+
+  .arg-description {
+    font-size: 1rem;
   }
 
 </style>

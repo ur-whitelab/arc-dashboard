@@ -1,23 +1,22 @@
 <template>
-  <div class="notification is-outlined">
+  <div class="output">
     <div class="has-text-centered">
       <h1> Output for <strong>{{processes.length == 0 || processes[index].name}}</strong> </h1>
     </div>
-    <div class="">
-      <code class="terminal is-size-7">
+    <div class="terminal">
+      <pre class="terminal-code">
         {{text}}
-      </code>
+      </pre>
     </div>
   </div>
 </template>
 
 <script>
-
 const { Writable } = require('stream')
-import Convert from 'ansi-to-html'
 
 export default {
   name: 'streamViewer',
+
   props: ['processes', 'index', 'currentStatus', 'status'],
   data () {
     return {
@@ -27,19 +26,24 @@ export default {
       text: ''
     }
   },
+  destroyed: function () {
+    if ('obs' in this)
+      this.obs.disconnect()
+  },
   watch: {
     currentStatus: function () {
       this.updateStream()
     },
     index: function () {
+      this.text = ''
       this.updateStream()
     }
+
   },
   methods: {
     // a helper since this is needed both when a currentStatus changes and
     // index
     updateStream: function () {
-      console.log(this.currentStatus)
       if (this.currentStatus === this.status.RUNNING || this.currentStatus === this.status.LOADING) {
         // check if a stream is available
         const p = this.processes[this.index]
@@ -50,27 +54,41 @@ export default {
             this.updateStreamIndex()
           }
         }
+        // add obs if necessary
+        if (!('obs' in this)) {
+          const elem = document.querySelector('.terminal')
+          this.obs = new MutationObserver((m) => {
+            elem.scrollTop = elem.scrollHeight
+          })
+          this.obs.observe(document.querySelector('.terminal-code'), { attributes: true, childList: true, characterData: true, subtree: true })
+        }
       }
     },
     // another helper, since we need to be able to change based on current status
     updateStreamIndex: function () {
       if (!(this.streamIndex in this.streams)) {
+        // clear existing stream
+        this.text = ''
         // doesn't exist, need to create new stream
         this.$log.info('Processing a new output stream for ' + this.streamIndex)
         const myIndex = this.streamIndex
-        let buffer = new Convert({ stream: true })
-        let ws = new Writable({
-          write (chunk, enc, next) {
-            // add to my buffer
+        const buffer = []
+        const v = this
+        const ws = new Writable()
 
-            buffer.push(chunk)
+        ws._write = (chunk, enc, next) => {
+          // add to my buffer
+          if (buffer.length === v.bufferMax)
+            buffer.splice(0, 1)
 
-            if (this.streamIndex === myIndex)
-              this.text += chunk
+          buffer.push(chunk)
 
-            next()
-          }
-        })
+          if (v.streamIndex === myIndex)
+            v.text += chunk.toString()
+
+          next()
+        }
+
         // bind the stream!
         this.processes[this.index].readStreams[myIndex].pipe(ws)
         this.streams[this.streamIndex] = {stream: ws, buffer: buffer}
@@ -78,7 +96,8 @@ export default {
         // already exists, so we are returning to it (?).
         // get buffer from text
         this.$log.info('Triggering rebuild of text due to change')
-        this.text = this.streams[this.streamIndex].buffer.join()
+        const s = this.streams[this.streamIndex]
+        this.text = s.buffer.join()
       }
     }
   }
@@ -87,5 +106,23 @@ export default {
 
 <style lang="scss">
 
+.output  {
+    margin-left:2rem;
+}
+
+.terminal {
+  background: darkgray;
+  color: $primary;
+  padding: 1rem;
+  max-height: 400px;
+  overflow: auto;
+}
+
+.terminal-code {
+  background: darkgray;
+  color:white;
+  font-size:1.2ch;
+  font-family: monospace;
+}
 
 </style>

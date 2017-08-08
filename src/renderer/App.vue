@@ -11,5 +11,5 @@
 </script>
 
 <style>
-  /* CSS */
+  @import "~bulma/bulma.sass";
 </style>
