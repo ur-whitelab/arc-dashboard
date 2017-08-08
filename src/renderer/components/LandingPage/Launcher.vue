@@ -38,7 +38,7 @@
                   <input onClick="this.select();"
                     class="input is-small" type="text"
                     v-model="arg.default"
-                    v-on:keyup.13="processes[activeIndex].cmd_args[arg.index] = $event.target.value">
+                    v-on:keyup.13="processes[activeProcess].cmd_args[arg.index] = $event.target.value">
                   <span class="icon is-small is-left">
                     <i class="fa fa-arrow-up"></i>
                   </span>
@@ -120,6 +120,7 @@ export default {
   },
 
   methods: {
+
     startProcess: function (index) {
       const p = this.processes[index]
       if (p.status !== status.READY)

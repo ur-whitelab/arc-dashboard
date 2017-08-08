@@ -26,7 +26,7 @@ export default {
       text: ''
     }
   },
-  destroyed: function () {
+  beforeDestroy: function () {
     if ('obs' in this)
       this.obs.disconnect()
   },

@@ -37,3 +37,5 @@ new Vue({
   store,
   template: '<App/>'
 }).$mount('#app')
+
+// set-up libzmq
