@@ -47,7 +47,6 @@ export default {
       })
     }
     this.watchVideo()
-    this.width = this.$el.querySelector('.camera-container').clientWidth * 0.9
   },
   methods: {
     watchVideo: function () {
@@ -55,8 +54,9 @@ export default {
       if (this.videoAvailable === false) {
         this.videoAvailable = elem.readyState > 1
         elem.load()
-        setTimeout(this.watchVideo, 1000)
-      }
+        setTimeout(this.watchVideo, 5000)
+      } else
+        this.width = this.$el.querySelector('.camera-container').clientWidth * 0.9
     }
   }
 }

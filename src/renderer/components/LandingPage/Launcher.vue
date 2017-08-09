@@ -28,29 +28,30 @@
       <div v-if="processes.length > 0" class="is-half-mobile is-one-third-tablet is-one-quarter-desktop column">
         <nav class="panel">
           <p class="panel-heading"> parameters </p>
-            <template v-for="arg in argInput">
+            <template v-for="(arg, i) in argPrompt">
               <p class="arg-description panel-block">
                 <label> {{arg.description}}</label>
               </p>
               <div class="panel-block">
                 <p class="control has-icons-left">
 
-                  <input onClick="this.select();"
+                  <input :id="'arg' + i" onClick="this.select();"
                     class="input is-small" type="text"
-                    v-model="arg.default"
-                    v-on:keyup.13="processes[activeProcess].cmd_args[arg.index] = $event.target.value">
+                    v-model="arg.value"
+                    v-on:keyup.13="document.getElementById('arg' + (i + 1)).focus()"
+                    v-on:keyup.9="document.getElementById('arg' + (i + 1)).focus()">
                   <span class="icon is-small is-left">
                     <i class="fa fa-arrow-up"></i>
                   </span>
-
                 </p>
               </div>
             </template>
 
           <a :disabled="processes[activeProcess].status !== status.READY"
+          :id="'arg' + (1 + argPrompt.length)"
           class="button panel-block is-success control-launch"
           @click="startProcess(activeProcess)">
-            <span class="panel-icon">
+            <span  class="panel-icon">
               <i class="fa fa-play"></i>
             </span>
             Launch {{processes[activeProcess].name}}
@@ -88,8 +89,7 @@ export default {
       status: status,
       processes: [],
       activeProcess: 0,
-      argInput: [],
-      argValues: []
+      argPrompt: []
     }
   },
 
@@ -138,8 +138,8 @@ export default {
       let cmd = []
       let j = 0
       for (let i = 0; i < p.cmd.length; i++) {
-        if (p.cmd[i] === null)
-          cmd.push(this.argInput[j++].default)
+        if (p.cmd[i] instanceof Object)
+          cmd.push(this.argPrompt[j++].value)
         else
           cmd.push(p.cmd[i])
       }
@@ -187,14 +187,21 @@ export default {
       const opts = dconfig.create_options
       opts.Image = pconfig.image
       opts.Cmd = pconfig.cmd
-      // need to replace . with actual current directort
+      const binds = []
+      // need to replace process paths in binds, which may be relative
       for (let i = 0; i < pconfig.binds.length; i++) {
-        if (pconfig.binds[i].split(':')[0] === '.') {
-          pconfig.binds[i] = process.cwd() + ':' + pconfig.binds[i].split(':')[1]
-          this.$log.info('Replacing . in bind to get ' + pconfig.binds[i])
+        let container = pconfig.binds[i].container
+        let host = ''
+        for (let a of this.argPrompt) {
+          if (a.context === 'binds' && a.index === i)
+            host = a.value
         }
+        if (host === '')
+          throw Error('could not understand bind')
+        binds.push(host + ':' + container)
       }
-      opts.Hostconfig = {'Binds': pconfig.binds}
+
+      opts.Hostconfig = {'Binds': binds}
       opts.ExposedPorts = {}
       opts.ExposedPorts[network.ports.zmq + '/tcp'] = {}
       this.$log.info('Creating container with ' + JSON.stringify(opts))
@@ -228,18 +235,38 @@ export default {
       if (p.status === status.DISABLED)
         this.activeProcess = oldV
       // process argument string
-      this.argInput = []
+      this.argPrompt = []
       if ('cmd' in p) {
         let j = 0
         for (let i = 0; i < p.cmd.length; i++) {
-          if (p.cmd[i] === null) {
+          if (p.cmd[i] instanceof Object) {
             // add j so we can reference latter
-            const a = p.cmd_args[j]
+            const a = p.cmd[i]
             a.index = j
-            this.argInput.push(a)
+            a.context = 'cmd'
+            a.value = a.default
+            this.argPrompt.push(a)
             j++
           }
         }
+      } else if (p.docker_id !== null) {
+        // docker process
+        // create prompts, which are a little more complex
+        // only allowable in binds for now
+        this.$db.find({ _id: p.docker_id }, (err, docs) => {
+          if (err)
+            this.$log.warn('Could not find docker id for process')
+          let d = docs[0]
+          if ('binds' in d) {
+            for (let i = 0; i < d.binds.length; i++) {
+              const a = d.binds[i].host
+              a.value = a.default
+              a.index = i
+              a.context = 'binds'
+              this.argPrompt.push(a)
+            }
+          }
+        })
       }
     }
   }
