@@ -181,6 +181,8 @@ export default {
       const dconfig = (await this.$db.findPromise({ _id: 'cdocker' }))[0]
       // process specific
       const pconfig = (await this.$db.findPromise({ _id: p.docker_id }))[0]
+      // process specific
+      const network = (await this.$db.findPromise({ _id: 'cnetwork' }))[0]
 
       const opts = dconfig.create_options
       opts.Image = pconfig.image
@@ -193,6 +195,8 @@ export default {
         }
       }
       opts.Hostconfig = {'Binds': pconfig.binds}
+      opts.ExposedPorts = {}
+      opts.ExposedPorts[network.ports.zmq + '/tcp'] = {}
       this.$log.info('Creating container with ' + JSON.stringify(opts))
       const container = await this.$docker.createContainer(opts)
 

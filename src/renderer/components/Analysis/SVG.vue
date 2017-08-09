@@ -20,9 +20,8 @@ export default {
   },
   mounted: function () {
     ipcRenderer.on('analysis-svg', (event, arg) => {
-      if (arg === this.src) {
-        this.srcBust = this.src + '?t=' + new Date().getTime();
-      }
+      if (arg === this.src)
+        this.srcBust = this.src + '?t=' + new Date().getTime()
     })
   }
 

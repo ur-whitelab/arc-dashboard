@@ -10,16 +10,16 @@
     "_id": "p2",
     "type": "process",
     "name": "Analysis",
-    "status": "ready",
+    "status": "disabled",
     "docker_id": "danalysis"
   },
   {
     "_id": "p3",
     "type": "process",
     "name": "Projection",
-    "status": "disabled",
+    "status": "ready",
     "docker_id": null,
-    "cmd": "project_exe"
+    "cmd": ["ar-project"]
   },
   {
     "_id": "p4",
@@ -27,7 +27,8 @@
     "name": "Camera",
     "status": "ready",
     "docker_id": null,
-    "cmd": ["cvlc", null, "--sout", "'#transcode{vcodec=theo,vb=800,fps=30,scale=1,acodec=none}:standard{access=http ,mux=ogg, dst=:10030/stream.ogg}'"],
+    "cmd": ["vlc", null, "-I dummy", "--sout", "#transcode{vcodec=theo,vb=800,fps=30,scale=1,acodec=none}:standard{access=http,mux=ogg,dst=:10030/stream.ogg}"],
+    "cmd2": ["vlc", "-I dummy", null, "--sout", ":sout=#transcode{vcodec=h264,acodec=mpga,ab=128,channels=2,samplerate=44100}:http{mux=ffmpeg{mux=flv},dst=:8080/stream} :sout-keep"],
     "cmd_args": [
       {
         "name": "video source",
@@ -76,7 +77,7 @@
   {
     "_id": "cnetwork",
     "ports": {
-      "zmq": 4555,
+      "zmq": 5000,
       "proxy": 8080,
       "video": 10030
     }
@@ -91,8 +92,8 @@
   {
     "_id": "dvision",
     "type": "docker",
-    "image": "jupyter/scipy-notebook",
-    "cmd": ["python3"],
-    "binds": [".:/home/jovyan"]
+    "image": "ar",
+    "cmd": ["python3", "Server.py"],
+    "binds": ["C:\\Users\\white\\unity-physics\\Python:/home/physics"]
   }
 ]
