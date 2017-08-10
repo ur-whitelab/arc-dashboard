@@ -217,8 +217,9 @@ export default {
       p.container_id = container.id
       container.inspect((e, d) => {
         if (e)
-          console.log(e)
+          throw e
         p.container_ip = d.NetworkSettings.IPAddress
+        this.$log.info(`Container ${instId} has IP ${p.container_ip}`)
       })
       p.status = status.RUNNING
       await container.start()
