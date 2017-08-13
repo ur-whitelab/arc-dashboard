@@ -1,10 +1,9 @@
 <template>
   <div class="camera-container container is-fluid">
     <div class="has-text-centered">
-      <video class="camera-video" autoplay="autoplay"
-      :width="width" :height="videoAvailable ? '' : '0px'"
-      :src="url" type="video/ogg" codec="theo">
-      </video>
+      <h2 class="title"> Video Feed </h2>
+      <h3 class="subtitle"> {{fps}} fps </h3>
+        <img id="video" class="video" :src="url">
     </div>
     <template v-if="!videoAvailable">
       <div class="video-warning notification is-warning has-text-centered">
@@ -17,6 +16,9 @@
 </template>
 
 <script>
+import status from '../../constants'
+import axios from 'axios'
+import _ from 'lodash'
 
 export default {
   name: 'camera',
@@ -33,32 +35,43 @@ export default {
     return {
       port: '',
       videoAvailable: false,
-      url: ''
+      url: '',
+      fps: 0
     }
   },
   mounted: function () {
-    if (this.port === '') {
-      this.$db.find({_id: 'cnetwork'}, (err, docs) => {
-        if (err)
-          throw err
-        const c = docs[0]
-        this.port = c.ports.video
-        this.url = 'http://' + this.host + ':' + this.port + '/stream.ogg'
-      })
-    }
-    this.watchVideo()
+    this.$bus.$on('process-status', (p) => {
+      if (p.name === 'Vision' && p.status === status.RUNNING) {
+        // we know the vision process is running, now we update our img tag
+        // it would be possible to attach host/port to vision process, but this
+        // is possible too
+
+        this.$db.find({_id: 'cnetwork'}, (err, docs) => {
+          if (err)
+            throw err
+          const c = docs[0]
+          this.port = c.ports.video
+          // we add timestamp just in case this is called multiple times
+          // add start-up delay for webcam
+          this.url = 'http://' + this.host + ':' + this.port + '/stream.mjpg?t=' + new Date().getTime()
+          this.videoAvailable = true
+          this.updateFPS()
+        })
+      }
+    })
   },
   methods: {
-    watchVideo: function () {
-      const elem = this.$el.querySelector('.camera-video')
-      if (this.videoAvailable === false) {
-        this.videoAvailable = elem.readyState > 1
-        elem.load()
-        setTimeout(this.watchVideo, 5000)
-      } else
-        this.width = this.$el.querySelector('.camera-container').clientWidth * 0.9
-    }
+    updateFPS: _.debounce(async function () {
+      try {
+        const response = await axios.get('http://' + this.host + ':' + this.port + '/stats')
+        const fpsRaw = Number(response.data.frequency)
+        this.fps = Math.round(fpsRaw)
+      } finally {
+        this.updateFPS()
+      }
+    }, 200)
   }
+
 }
 
 </script>

@@ -25,7 +25,7 @@
     "_id": "p4",
     "type": "process",
     "name": "Camera",
-    "status": "ready",
+    "status": "disabled",
     "docker_id": null,
     "cmd": [
       "vlc",
@@ -63,7 +63,19 @@
     "type": "process",
     "name": "Vision",
     "status": "ready",
-    "docker_id": "dvision"
+    "docker_id": null,
+    "cmd": [
+      "arcvision",
+      "--hostname", "*",
+      "--zmq-port", "5001",
+      "--server-port", "10030",
+      "--video-filename",
+      {
+        "name": "video-filename",
+        "description": "path to video file",
+        "default": "0"
+      }
+    ]
   },
   {
     "_id": "cdocker",
@@ -79,6 +91,7 @@
     "_id": "cnetwork",
     "ports": {
       "zmq": 5000,
+      "vision-zmq": 5001,
       "proxy": 8080,
       "video": 10030
     }
@@ -88,21 +101,5 @@
     "type": "docker",
     "image": "jupyter/scipy-notebook",
     "cmd": ["sleep", "10"]
-  },
-  {
-    "_id": "dvision",
-    "type": "docker",
-    "image": "ar",
-    "cmd": ["python3", "Server.py"],
-    "binds": [
-      {
-        "container": "/home/physics",
-        "host": {
-          "name": "host path",
-          "description": "Location of python scripts",
-          "default": "C:\\Users\\white\\includear"
-        }
-      }
-    ]
   }
 ]

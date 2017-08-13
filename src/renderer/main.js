@@ -30,6 +30,10 @@ Vue.prototype.$docker = docker
 // make log accessible
 Vue.prototype.$log = log
 
+// creaet global event bus for process start/stop
+const bus = new Vue()
+Vue.prototype.$bus = bus
+
 /* eslint-disable no-new */
 new Vue({
   components: { App },
@@ -37,5 +41,3 @@ new Vue({
   store,
   template: '<App/>'
 }).$mount('#app')
-
-// set-up libzmq

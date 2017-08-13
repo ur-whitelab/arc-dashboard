@@ -1,33 +1,31 @@
 <template>
   <div>
-
-  <div class="container is-fluid">
-    <div class="tabs is-boxed is-centered process-tabs">
-      <ul class="">
-        <template v-for="(process, index) in processes">
-          <li :class="{'is-active': activeProcess == index}">
-            <a :id="index" class="process-tab"
-              :class="process.status"
-              @click="activeProcess = index">
-              <span class="icon is-small">
-                <i class="fa"
-                :class="{ 'fa-ban': process.status === status.DISABLED,
-                'fa-server': process.status === status.RUNNING ||  process.status === status.LOADING,
-                'fa-power-off': process.status === status.READY }">
-                </i>
-              </span>
-                {{process.name}}
-            </a>
-          </li>
-        </template>
-      </ul>
+    <div class="container is-fluid">
+      <div class="tabs is-boxed is-centered process-tabs">
+        <ul class="">
+          <template v-for="(process, index) in processes">
+            <template v-if="process.status !== status.DISABLED">
+              <li :class="{'is-active': activeProcess == index}">
+                <a :id="index" class="process-tab" :class="process.status" @click="activeProcess = index">
+                  <span class="icon is-small">
+                    <i class="fa" :class="{ 'fa-ban': process.status === status.DISABLED,
+                    'fa-server': process.status === status.RUNNING ||  process.status === status.LOADING,
+                    'fa-power-off': process.status === status.READY }">
+                    </i>
+                  </span>
+                  {{process.name}}
+                </a>
+              </li>
+            </template>
+          </template>
+        </ul>
+      </div>
     </div>
-  </div>
     <div class="container is-fluid launcher">
       <div class="columns is-gapless">
-      <div v-if="processes.length > 0" class="is-half-mobile is-one-third-tablet is-one-quarter-desktop column">
-        <nav class="panel">
-          <p class="panel-heading"> parameters </p>
+        <div v-if="processes.length > 0" class="is-half-mobile is-one-third-tablet is-one-quarter-desktop column">
+          <nav class="panel">
+            <p class="panel-heading"> parameters </p>
             <template v-for="(arg, i) in argPrompt">
               <p class="arg-description panel-block">
                 <label> {{arg.description}}</label>
@@ -35,38 +33,27 @@
               <div class="panel-block">
                 <p class="control has-icons-left">
 
-                  <input :id="'arg' + i" onClick="this.select();"
-                    class="input is-small" type="text"
-                    v-model="arg.value"
-                    v-on:keyup.13="document.getElementById('arg' + (i + 1)).focus()"
-                    v-on:keyup.9="document.getElementById('arg' + (i + 1)).focus()">
+                  <input :id="'arg' + i" onClick="this.select();" class="input is-small" type="text" v-model="arg.value" v-on:keyup.13="document.getElementById('arg' + (i + 1)).focus()" v-on:keyup.9="document.getElementById('arg' + (i + 1)).focus()">
                   <span class="icon is-small is-left">
                     <i class="fa fa-arrow-up"></i>
                   </span>
                 </p>
               </div>
             </template>
-
-          <a :disabled="processes[activeProcess].status !== status.READY"
-          :id="'arg' + (1 + argPrompt.length)"
-          class="button panel-block is-success control-launch"
-          @click="startProcess(activeProcess)">
-            <span  class="panel-icon">
-              <i class="fa fa-play"></i>
-            </span>
-            Launch {{processes[activeProcess].name}}
-          </a>
-        </nav>
-      </div>
-      <div class="column">
-        <div>
-        <stream-viewer :status="status"
-          :processes="processes"
-          :currentStatus="currentStatus"
-          :index="activeProcess">
-        </stream-viewer>
+            <a :disabled="processes[activeProcess].status !== status.READY" :id="'arg' + (1 + argPrompt.length)" class="button panel-block is-success control-launch" @click="startProcess(activeProcess)">
+              <span class="panel-icon">
+                <i class="fa fa-play"></i>
+              </span>
+              Launch {{processes[activeProcess].name}}
+            </a>
+          </nav>
         </div>
-      </div>
+        <div class="column">
+          <div>
+            <stream-viewer :status="status" :processes="processes" :currentStatus="currentStatus" :index="activeProcess">
+            </stream-viewer>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -76,10 +63,10 @@
 <script>
 import StreamViewer from './StreamViewer'
 import merge from 'merge-stream'
+import status from '../../constants'
 
+const {ipcRenderer} = require('electron')
 const { exec } = require('child_process')
-
-var status = { READY: 'ready', DISABLED: 'disabled', LOADING: 'loading', RUNNING: 'running' }
 
 export default {
   name: 'launcher',
@@ -120,12 +107,18 @@ export default {
   },
 
   methods: {
+    setStatus: function (p, status) {
+      p.status = status
+      // send notification about process
 
+      this.$bus.$emit('process-status', p)
+      ipcRenderer.send('process-status', p)
+    },
     startProcess: function (index) {
       const p = this.processes[index]
       if (p.status !== status.READY)
         return
-      p.status = status.LOADING
+      this.setStatus(p, status.LOADING)
 
       if (p.docker_id !== null)
         this.startDockerProcess(p)
@@ -143,9 +136,9 @@ export default {
         else
           cmd.push(p.cmd[i])
       }
-      p.status = status.LOADING
+      this.setStatus(p, status.LOADING)
+      this.$log.info('Spawning with ' + cmd.join(' '))
       const ps = exec(cmd.join(' '))
-      this.$log.info('Spawning with ' + cmd)
       const instId = ps.pid
       p.instances.push(instId)
       p.readStreams[instId] = merge(ps.stdout, ps.stderr)
@@ -162,16 +155,16 @@ export default {
             reject(err)
           })
           ps.stdout.on('data', () => {
-            p.status = status.RUNNING
+            this.setStatus(p, status.RUNNING)
           })
           ps.stderr.on('data', () => {
-            p.status = status.RUNNING
+            this.setStatus(p, status.RUNNING)
           })
         })
       } catch (err) {
         throw err
       } finally {
-        p.status = status.READY
+        this.setStatus(p, status.READY)
       }
     },
 
@@ -221,13 +214,13 @@ export default {
         p.container_ip = d.NetworkSettings.IPAddress
         this.$log.info(`Container ${instId} has IP ${p.container_ip}`)
       })
-      p.status = status.RUNNING
+      this.setStatus(p, status.RUNNING)
       await container.start()
       await container.wait()
       await container.remove()
       p.container_id = null
       p.container_ip = null
-      p.status = status.READY
+      this.setStatus(p, status.READY)
     }
   },
   watch: {
