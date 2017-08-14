@@ -40,19 +40,32 @@
                 </p>
               </div>
             </template>
-            <a :disabled="processes[activeProcess].status !== status.READY" :id="'arg' + (1 + argPrompt.length)" class="button panel-block is-success control-launch" @click="startProcess(activeProcess)">
-              <span class="panel-icon">
-                <i class="fa fa-play"></i>
-              </span>
-              Launch {{processes[activeProcess].name}}
-            </a>
+              <a :disabled="processes[activeProcess].status !== status.READY" :id="'arg' + (1 + argPrompt.length)" class="button panel-block is-success control-launch" @click="startProcess(processes[activeProcess]._id)">
+                <span class="panel-icon">
+                  <i class="fa fa-play"></i>
+                </span>
+                Launch {{processes[activeProcess].name}}
+              </a>
+              <a :disabled="processes[activeProcess].status !== status.RUNNING" :id="'arg' + (2 + argPrompt.length)" class="button panel-block is-warning control-launch" @click="stopProcess(processes[activeProcess]._id)">
+                <span class="panel-icon">
+                  <i class="fa fa-stop"></i>
+                </span>
+                Stop {{processes[activeProcess].name}}
+              </a>
           </nav>
         </div>
         <div class="column">
-          <div>
-            <stream-viewer :status="status" :processes="processes" :currentStatus="currentStatus" :index="activeProcess">
-            </stream-viewer>
-          </div>
+          <template v-if="activeProcess == 0">
+            <div>
+              <stream-viewer :status="status" :processes="processes" :currentStatus="currentStatus" :index="activeProcess">
+              </stream-viewer>
+            </div>
+          </template>
+          <template v-else>
+            <div>
+              <h3> Big Launcher </h3>
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -64,6 +77,8 @@
 import StreamViewer from './StreamViewer'
 import merge from 'merge-stream'
 import status from '../../constants'
+import kill from 'tree-kill'
+import _ from 'lodash'
 
 const {ipcRenderer} = require('electron')
 const { exec } = require('child_process')
@@ -114,16 +129,47 @@ export default {
       this.$bus.$emit('process-status', p)
       ipcRenderer.send('process-status', p)
     },
-    startProcess: function (index) {
-      const p = this.processes[index]
-      if (p.status !== status.READY)
+    // start process by id
+    startProcess: function (id) {
+      const p = _.find(this.processes, {'_id': id})
+      if (!p || p.status !== status.READY) {
+        this.$log.warn(id + ' was requested to start, but is not ready or invalid id')
         return
+      }
+
+      // make sure we have active correct
+      this.activeProcess = this.processes.indexOf(p)
+
       this.setStatus(p, status.LOADING)
 
       if (p.docker_id !== null)
         this.startDockerProcess(p)
       else
         this.startExeProcess(p)
+    },
+
+    stopProcess: async function (id) {
+      const p = _.find(this.processes, {'_id': id})
+      if (!p || p.status !== status.RUNNING) {
+        this.$log.warn(id + ' was requested to kill, but is not ready or invalid id')
+        return
+      }
+
+      // make sure we have active correct
+      this.activeProcess = this.processes.indexOf(p)
+
+      // send notification we are about to kill
+      this.setStatus(p, status.LOADING)
+
+      const instId = p.instances.pop()
+
+      if (p.docker_id !== null) {
+        // stop container
+        await this.$docker.getContainer(instId).stop()
+      } else
+        await kill(instId)
+
+      this.setStatus(p, status.READY)
     },
 
     startExeProcess: async function (p) {
@@ -201,7 +247,7 @@ export default {
       const container = await this.$docker.createContainer(opts)
 
       // add this container to the list of instances
-      const instId = 'd' + container.id
+      const instId = container.id
       p.instances.push(instId)
 
       // get the stream we can read from
@@ -225,6 +271,12 @@ export default {
   },
   watch: {
     activeProcess: function (newV, oldV) {
+      this.argPrompt = []
+
+      // check if we indicate the special all-process
+      if (newV === -1)
+        return
+
       const p = this.processes[newV]
       if (p.status === status.DISABLED)
         this.activeProcess = oldV
