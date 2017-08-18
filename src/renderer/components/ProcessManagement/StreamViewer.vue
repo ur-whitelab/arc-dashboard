@@ -12,12 +12,13 @@
 </template>
 
 <script>
-const { Writable } = require('stream')
+import { Writable } from 'stream'
+import { mapGetters, mapState } from 'vuex'
 
 export default {
   name: 'streamViewer',
 
-  props: ['processes', 'index', 'currentStatus', 'status'],
+  props: ['index', 'currentStatus', 'status'],
   data () {
     return {
       streams: {},
@@ -25,6 +26,16 @@ export default {
       bufferMax: 4096,
       text: ''
     }
+  },
+  computed: {
+    ...mapGetters({
+      processLength: 'processesLength',
+      processes: 'processList',
+      instanceFromIdAndPid: 'instanceFromIdAndPid'
+    }),
+    ...mapState({
+      instances: 'instances'
+    })
   },
   beforeDestroy: function () {
     if ('obs' in this)
@@ -38,7 +49,6 @@ export default {
       this.text = ''
       this.updateStream()
     }
-
   },
   methods: {
     // a helper since this is needed both when a currentStatus changes and
@@ -47,10 +57,11 @@ export default {
       if (this.currentStatus !== this.status.DISABLED) {
         // check if a stream is available
         const p = this.processes[this.index]
-        if (p.instances.length > 0) {
-          var inst = p.instances[p.instances.length - 1]
-          if (inst in p.readStreams) {
-            this.streamIndex = inst
+        const pInstances = this.instances[p.id]
+        if (pInstances.length > 0) {
+          let inst = pInstances[pInstances.length - 1]
+          if ('stream' in inst) {
+            this.streamIndex = inst.pid
             this.updateStreamIndex()
           }
         }
@@ -90,7 +101,7 @@ export default {
         }
 
         // bind the stream!
-        this.processes[this.index].readStreams[myIndex].pipe(ws)
+        this.instanceFromIdAndPid(this.processes[this.index].id, this.streamIndex).stream.pipe(ws)
         this.streams[this.streamIndex] = {stream: ws, buffer: buffer}
       } else {
         // already exists, so we are returning to it (?).

@@ -101,5 +101,9 @@
     "type": "docker",
     "image": "jupyter/scipy-notebook",
     "cmd": ["sleep", "10"]
+  },
+  {
+    "_id": "startup",
+    "steps": ["p1", "p2", "p3", "p5"]
   }
 ]

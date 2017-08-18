@@ -75,13 +75,8 @@
 
 <script>
 import StreamViewer from './StreamViewer'
-import merge from 'merge-stream'
+import { mapActions, mapGetters } from 'vuex'
 import status from '../../constants'
-import kill from 'tree-kill'
-import _ from 'lodash'
-
-const {ipcRenderer} = require('electron')
-const { exec } = require('child_process')
 
 export default {
   name: 'launcher',
@@ -89,7 +84,6 @@ export default {
   data () {
     return {
       status: status,
-      processes: [],
       activeProcess: 0,
       argPrompt: []
     }
@@ -97,187 +91,26 @@ export default {
 
   computed: {
     currentStatus: function () {
-      if (this.processes.length > 0)
-        return this.processes[this.activeProcess].status
-    }
-  },
-
-  created: function () {
-    this.$db.find({type: 'process'}, (err, docs) => {
-      if (!err) {
-        this.processes = docs
-
-        // choose a valid active
-        for (let i = 0; i < this.processes.length; i++) {
-          if (this.processes[this.activeProcess].status === status.DISABLED &&
-              this.processes[i].status !== status.DISABLED)
-            this.activeProcess = i
-
-          // add needed properties not in DB
-          this.processes[i].instances = []
-          this.processes[i].readStreams = {}
-        }
-      }
+      if (this.processesLength > 0)
+        return this.processesFromIndex(this.activeProcess).status
+    },
+    ...mapGetters({
+      processLength: 'processesLength',
+      processes: 'processList'
     })
   },
 
   methods: {
-    setStatus: function (p, status) {
-      p.status = status
-      // send notification about process
-
-      this.$bus.$emit('process-status', p)
-      ipcRenderer.send('process-status', p)
-    },
-    // start process by id
-    startProcess: function (id) {
-      const p = _.find(this.processes, {'_id': id})
-      if (!p || p.status !== status.READY) {
-        this.$log.warn(id + ' was requested to start, but is not ready or invalid id')
-        return
-      }
-
-      // make sure we have active correct
-      this.activeProcess = this.processes.indexOf(p)
-
-      this.setStatus(p, status.LOADING)
-
-      if (p.docker_id !== null)
-        this.startDockerProcess(p)
-      else
-        this.startExeProcess(p)
-    },
-
-    stopProcess: async function (id) {
-      const p = _.find(this.processes, {'_id': id})
-      if (!p || p.status !== status.RUNNING) {
-        this.$log.warn(id + ' was requested to kill, but is not ready or invalid id')
-        return
-      }
-
-      // make sure we have active correct
-      this.activeProcess = this.processes.indexOf(p)
-
-      // send notification we are about to kill
-      this.setStatus(p, status.LOADING)
-
-      const instId = p.instances.pop()
-
-      if (p.docker_id !== null) {
-        // stop container
-        await this.$docker.getContainer(instId).stop()
-      } else
-        await kill(instId)
-
-      this.setStatus(p, status.READY)
-    },
-
-    startExeProcess: async function (p) {
-      // build command string
-      let cmd = []
-      let j = 0
-      for (let i = 0; i < p.cmd.length; i++) {
-        if (p.cmd[i] instanceof Object)
-          cmd.push(this.argPrompt[j++].value)
-        else
-          cmd.push(p.cmd[i])
-      }
-      this.setStatus(p, status.LOADING)
-      this.$log.info('Spawning with ' + cmd.join(' '))
-      const ps = exec(cmd.join(' '))
-      const instId = ps.pid
-      p.instances.push(instId)
-      p.readStreams[instId] = merge(ps.stdout, ps.stderr)
-      try {
-        await new Promise((resolve, reject) => {
-          ps.on('close', (code) => {
-            if (code !== 0) {
-              this.$log.warn()
-              reject(Error(cmd + ' ended with code ' + code))
-            }
-            resolve()
-          })
-          ps.on('error', (err) => {
-            reject(err)
-          })
-          ps.stdout.on('data', () => {
-            this.setStatus(p, status.RUNNING)
-          })
-          ps.stderr.on('data', () => {
-            this.setStatus(p, status.RUNNING)
-          })
-        })
-      } catch (err) {
-        throw err
-      } finally {
-        this.setStatus(p, status.READY)
-      }
-    },
-
-    startDockerProcess: async function (p) {
-      // load what's in our DB and turn it into a docker run command
-      // default
-      const dconfig = (await this.$db.findPromise({ _id: 'cdocker' }))[0]
-      // process specific
-      const pconfig = (await this.$db.findPromise({ _id: p.docker_id }))[0]
-      // process specific
-      const network = (await this.$db.findPromise({ _id: 'cnetwork' }))[0]
-
-      const opts = dconfig.create_options
-      opts.Image = pconfig.image
-      opts.Cmd = pconfig.cmd
-      const binds = []
-      // need to replace process paths in binds, which may be relative
-      for (let i = 0; i < pconfig.binds.length; i++) {
-        let container = pconfig.binds[i].container
-        let host = ''
-        for (let a of this.argPrompt) {
-          if (a.context === 'binds' && a.index === i)
-            host = a.value
-        }
-        if (host === '')
-          throw Error('could not understand bind')
-        binds.push(host + ':' + container)
-      }
-
-      opts.Hostconfig = {'Binds': binds}
-      opts.ExposedPorts = {}
-      opts.ExposedPorts[network.ports.zmq + '/tcp'] = {}
-      this.$log.info('Creating container with ' + JSON.stringify(opts))
-      const container = await this.$docker.createContainer(opts)
-
-      // add this container to the list of instances
-      const instId = container.id
-      p.instances.push(instId)
-
-      // get the stream we can read from
-      let stream = await container.attach({stream: true, stdout: true, stderr: true})
-      p.readStreams[instId] = stream
-      p.container_id = container.id
-      container.inspect((e, d) => {
-        if (e)
-          throw e
-        p.container_ip = d.NetworkSettings.IPAddress
-        this.$log.info(`Container ${instId} has IP ${p.container_ip}`)
-      })
-      this.setStatus(p, status.RUNNING)
-      await container.start()
-      await container.wait()
-      await container.remove()
-      p.container_id = null
-      p.container_ip = null
-      this.setStatus(p, status.READY)
-    }
+    ...mapActions([
+      'startProcess',
+      'stopProcess'
+    ])
   },
   watch: {
     activeProcess: function (newV, oldV) {
       this.argPrompt = []
 
-      // check if we indicate the special all-process
-      if (newV === -1)
-        return
-
-      const p = this.processes[newV]
+      const p = this.processesFromIndex(this.activeProcess)
       if (p.status === status.DISABLED)
         this.activeProcess = oldV
       // process argument string

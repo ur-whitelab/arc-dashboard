@@ -20,8 +20,9 @@
           <div class="tile is-4 is-parent is-vertical">
             <article class="is-child tile box notification is-outlined">
               <p class="title">Start-up </p>
-              <p> Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ornare magna eros, eu pellentesque tortor vestibulum ut. Maecenas non massa sem. Etiam finibus odio quis feugiat facilisis.
-              </p>
+                <div>
+                  <startup></startup>
+                </div>
             </article>
             <article class="is-child tile box notification is-outlined">
               <p class="title"> Camera View </p>
@@ -47,12 +48,13 @@
 </template>
 
 <script>
-  import Launcher from './LandingPage/Launcher'
+  import Launcher from './ProcessManagement/Launcher'
+  import Startup from './ProcessManagement/Startup'
   import Camera from './Analysis/Camera'
 
 export default {
     name: 'landing-page',
-    components: { Launcher, Camera },
+    components: { Launcher, Camera, Startup },
     methods: {
       open (link) {
         this.$electron.shell.openExternal(link)
