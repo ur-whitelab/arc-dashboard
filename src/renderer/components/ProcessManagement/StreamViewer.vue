@@ -30,11 +30,11 @@ export default {
   computed: {
     ...mapGetters({
       processLength: 'processesLength',
-      processes: 'processList',
-      instanceFromIdAndPid: 'instanceFromIdAndPid'
+      streamFromPid: 'streamFromPid',
+      processes: 'processesList'
     }),
     ...mapState({
-      instances: 'instances'
+      instances: state => state.processes.instances
     })
   },
   beforeDestroy: function () {
@@ -60,10 +60,8 @@ export default {
         const pInstances = this.instances[p.id]
         if (pInstances.length > 0) {
           let inst = pInstances[pInstances.length - 1]
-          if ('stream' in inst) {
-            this.streamIndex = inst.pid
-            this.updateStreamIndex()
-          }
+          this.streamIndex = inst.pid
+          this.updateStreamIndex()
         }
         // add obs if necessary
         if (!('obs' in this)) {
@@ -101,7 +99,7 @@ export default {
         }
 
         // bind the stream!
-        this.instanceFromIdAndPid(this.processes[this.index].id, this.streamIndex).stream.pipe(ws)
+        this.streamFromPid(this.streamIndex).pipe(ws)
         this.streams[this.streamIndex] = {stream: ws, buffer: buffer}
       } else {
         // already exists, so we are returning to it (?).

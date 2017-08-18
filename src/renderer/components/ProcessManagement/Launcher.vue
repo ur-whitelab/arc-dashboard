@@ -40,13 +40,13 @@
                 </p>
               </div>
             </template>
-              <a :disabled="processes[activeProcess].status !== status.READY" :id="'arg' + (1 + argPrompt.length)" class="button panel-block is-success control-launch" @click="startProcess(processes[activeProcess]._id)">
+              <a :disabled="processes[activeProcess].status !== status.READY" :id="'arg' + (1 + argPrompt.length)" class="button panel-block is-success control-launch" @click="startProcess(processes[activeProcess].id)">
                 <span class="panel-icon">
                   <i class="fa fa-play"></i>
                 </span>
                 Launch {{processes[activeProcess].name}}
               </a>
-              <a :disabled="processes[activeProcess].status !== status.RUNNING" :id="'arg' + (2 + argPrompt.length)" class="button panel-block is-warning control-launch" @click="stopProcess(processes[activeProcess]._id)">
+              <a :disabled="processes[activeProcess].status !== status.RUNNING" :id="'arg' + (2 + argPrompt.length)" class="button panel-block is-warning control-launch" @click="stopProcess(processes[activeProcess].id)">
                 <span class="panel-icon">
                   <i class="fa fa-stop"></i>
                 </span>
@@ -55,27 +55,18 @@
           </nav>
         </div>
         <div class="column">
-          <template v-if="activeProcess == 0">
-            <div>
-              <stream-viewer :status="status" :processes="processes" :currentStatus="currentStatus" :index="activeProcess">
-              </stream-viewer>
-            </div>
-          </template>
-          <template v-else>
-            <div>
-              <h3> Big Launcher </h3>
-            </div>
-          </template>
+          <div>
+            <stream-viewer :status="status" :processes="processes" :currentStatus="currentStatus" :index="activeProcess"></stream-viewer>
+          </div>
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
 <script>
 import StreamViewer from './StreamViewer'
-import { mapActions, mapState } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
 import status from '../../constants'
 
 export default {
@@ -90,7 +81,7 @@ export default {
   },
 
   computed: {
-    ...mapState({
+    ...mapGetters({
       processes: 'processesList'
     }),
     currentStatus: function () {
@@ -109,7 +100,7 @@ export default {
     activeProcess: function (newV, oldV) {
       this.argPrompt = []
 
-      const p = this.processesFromIndex(this.activeProcess)
+      const p = this.processes[this.activeProcess]
       if (p.status === status.DISABLED)
         this.activeProcess = oldV
       // process argument string
@@ -119,7 +110,7 @@ export default {
         for (let i = 0; i < p.cmd.length; i++) {
           if (p.cmd[i] instanceof Object) {
             // add j so we can reference latter
-            const a = p.cmd[i]
+            const a = Object.assign({}, p.cmd[i])
             a.index = j
             a.context = 'cmd'
             a.value = a.default

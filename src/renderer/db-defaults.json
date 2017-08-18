@@ -10,7 +10,7 @@
     "_id": "p2",
     "type": "process",
     "name": "Analysis",
-    "status": "disabled",
+    "status": "ready",
     "docker_id": "danalysis"
   },
   {

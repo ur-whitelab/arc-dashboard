@@ -1,6 +1,7 @@
 import kill from 'tree-kill'
 import merge from 'merge-stream'
 import _ from 'lodash'
+import Vue from 'vue'
 
 import * as types from '../mutation-types'
 import status from '../../constants'
@@ -14,7 +15,15 @@ import {ipcRenderer} from 'electron'
 async function startExeProcess (p, updateStatus, addInstance) {
   // build command string
   let cmd = []
-
+  for (const c of p.cmd) {
+    if (typeof c === 'object') {
+      if ('value' in c)
+        cmd.push(c.value)
+      else
+        cmd.push(c.default)
+    } else
+      cmd.push(c)
+  }
   // TODO: do this
 
   updateStatus(status.LOADING)
@@ -75,14 +84,14 @@ async function startDockerProcess (p, updateStatus, addInstance) {
   // get the stream we can read from
   const stream = await container.attach({ stream: true, stdout: true, stderr: true })
 
+  updateStatus(status.RUNNING)
+  await container.start()
   container.inspect((e, d) => {
     if (e)
       throw e
     addInstance(instId, {stream: stream, docker_ip: d.NetworkSettings.IPAddress})
     log.info(`Container ${instId} has IP ${d.NetworkSettings.IPAddress}`)
   })
-  updateStatus(status.RUNNING)
-  await container.start()
   await container.wait()
   await container.remove()
   updateStatus(status.READY)
@@ -90,8 +99,11 @@ async function startDockerProcess (p, updateStatus, addInstance) {
 
 const state = {
   processes: {},
-  processesList: [],
   instances: {}
+}
+
+const volatile = {
+  streams: {}
 }
 
 const getters = {
@@ -107,8 +119,11 @@ const getters = {
   processesLength: state => {
     return _.size(state.processes)
   },
-  instanceFromIdAndPid: (state, getters) => (id, pid) => {
-    return _.find(state.instances[id], {pid: pid})
+  streamFromPid: (state, getters) => (pid) => {
+    return volatile.streams[pid]
+  },
+  processesList: state => {
+    return _.values(state.processes)
   }
 }
 
@@ -117,18 +132,18 @@ const actions = {
     // find the process by id
     const p = state.processes[id]
 
-    if (!p || p.status !== status.RUNNING) {
-      log.warn(id + ' was requested to kill, but is not ready or invalid id')
+    if (!p || p.status !== status.READY) {
+      log.warn(id + ' was requested to start, but is not ready or invalid id')
       return
     }
 
     // set to loading status
-    commit(types.PROCESS_STATUS, { status: status.LOADING })
+    commit(types.PROCESS_STATUS, { id: id, status: status.LOADING })
 
     // dispatch to exe or docker
     if (p.docker_id !== null) {
       await startDockerProcess(p, (s) => {
-        commit(types.PROCESS_STATUS, { status: s })
+        commit(types.PROCESS_STATUS, { id: id, status: s })
       }, (pid, instance) => {
         // use the spread syntax to ensure we get a pid, but can have other properties
         commit(types.PROCESS_INSTANCE_PUSH, { id: id, instance: { ...instance, pid: pid } })
@@ -145,21 +160,25 @@ const actions = {
     // find the process by id
     const p = state.processes[id]
     if (!p || p.status !== status.RUNNING) {
-      log.warn(id + ' was requested to kill, but is not ready or invalid id')
+      log.warn(id + ' was requested to kill, but is not running or invalid id')
       return
     }
 
     // set to loading status
-    commit(types.PROCESS_STATUS, { status: status.LOADING })
+    commit(types.PROCESS_STATUS, { id: id, status: status.LOADING })
 
-    const inst = commit(types.PROCESS_INSTANCE_POP, {id: id})
+    // get out latest instance
+    const inst = _.last(state.instances[id])
+
     if (p.docker_id !== null) {
       // stop container
       await docker.getContainer(inst.pid).stop()
     } else
       await kill(inst.pid)
 
-    this.setStatus(p, status.READY)
+    // now actually remove that instance
+    commit(types.PROCESS_INSTANCE_POP, {id: id})
+    commit(types.PROCESS_STATUS, { id: id, status: status.READY })
   }
 }
 
@@ -167,14 +186,17 @@ const mutations = {
   // this will update a process status
   [types.PROCESS_STATUS] (state, {id, status}) {
     // find the process by id
-    const p = _.find(state.processes, { '_id': id })
-    p.status = status
-    ipcRenderer.send('process-status', p)
+    state.processes[id].status = status
+    ipcRenderer.send('process-status', state.processes[id])
   },
 
   // this will add an instance record
   [types.PROCESS_INSTANCE_PUSH] (state, {instance, id}) {
-    state.instances[id].push(instance)
+    // extract stream
+    let {stream, ...rest} = instance
+    state.instances[id].push(rest)
+    // put stream in volatile so changes don't trigger watchers
+    volatile.streams[rest.pid] = stream
   },
 
   [types.PROCESS_INSTANCE_POP] (state, {id}) {
@@ -183,10 +205,9 @@ const mutations = {
 
   [types.PROCESS_INSERT] (state, process) {
     const id = process._id
-    state.processes[id] = process
+    Vue.set(state.processes, id, process)
     process.id = id
-    state.instances[id] = []
-    state.processesList.push(process)
+    Vue.set(state.instances, id, [])
   }
 }
 
@@ -194,5 +215,6 @@ export default {
   state,
   getters,
   actions,
-  mutations
+  mutations,
+  volatile
 }
