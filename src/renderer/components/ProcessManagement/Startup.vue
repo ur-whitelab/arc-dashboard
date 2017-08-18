@@ -19,7 +19,6 @@
 
 <script>
 import status from '../../constants'
-import _ from 'lodash'
 
 export default {
   name: 'startup',
@@ -42,13 +41,6 @@ export default {
           })
         }
       }
-    })
-
-    // now set-up our listeners
-    this.$bus.$on('process-status', (otherP) => {
-      const i = _.findIndex(this.processes, { '_id': otherP.id })
-      // copy whole object to trigger reactive data
-      this.processes[i] = otherP
     })
   }
 }

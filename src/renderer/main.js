@@ -6,7 +6,8 @@ import router from './router'
 import db from './datastore'
 import docker from './docker'
 import log from 'electron-log'
-import store from '.store'
+import store from './store'
+import * as types from './store/mutation-types'
 
 import 'bulma/css/bulma.css'
 import 'font-awesome/css/font-awesome'
@@ -28,5 +29,15 @@ new Vue({
   components: { App },
   router,
   store,
-  template: '<App/>'
+  template: '<App/>',
+  mounted: function () {
+    // load processes into store
+    this.$db.find({ type: 'process' }, (err, docs) => {
+      if (!err) {
+        for (let d of docs)
+          this.$store.commit(types.PROCESS_INSERT, d)
+        this.$log.info(`Adding in ${docs.length} processes`)
+      }
+    })
+  }
 }).$mount('#app')

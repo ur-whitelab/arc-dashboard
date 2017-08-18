@@ -90,15 +90,13 @@ async function startDockerProcess (p, updateStatus, addInstance) {
 
 const state = {
   processes: {},
+  processesList: [],
   instances: {}
 }
 
 const getters = {
   processIdList: state => {
     return _.map(state.processes, 'id')
-  },
-  processList: state => {
-    return Object.values(state.processes)
   },
   processFromIndex: (state, getters) => (i) => {
     return state.processes[getters.processIdList[i]]
@@ -109,7 +107,7 @@ const getters = {
   processesLength: state => {
     return _.size(state.processes)
   },
-  instanceFromIdAndPid: (state, getters) => (id,pid) => {
+  instanceFromIdAndPid: (state, getters) => (id, pid) => {
     return _.find(state.instances[id], {pid: pid})
   }
 }
@@ -133,13 +131,13 @@ const actions = {
         commit(types.PROCESS_STATUS, { status: s })
       }, (pid, instance) => {
         // use the spread syntax to ensure we get a pid, but can have other properties
-        commit(types.PROCESS_INSTANCE_PUSH, { id: id, instance: { ...instance, pid: pid })
+        commit(types.PROCESS_INSTANCE_PUSH, { id: id, instance: { ...instance, pid: pid } })
       })
     } else {
       await startExeProcess(p, (s) => {
         commit(types.PROCESS_STATUS, { id: id, status: s })
       }, (pid, instance) => {
-        commit(types.PROCESS_INSTANCE_PUSH, { id: id, instance: { ...instance, pid: pid })
+        commit(types.PROCESS_INSTANCE_PUSH, { id: id, instance: { ...instance, pid: pid } })
       })
     }
   },
@@ -162,7 +160,6 @@ const actions = {
       await kill(inst.pid)
 
     this.setStatus(p, status.READY)
-
   }
 }
 
@@ -185,10 +182,11 @@ const mutations = {
   },
 
   [types.PROCESS_INSERT] (state, process) {
-    const id =process._id
+    const id = process._id
     state.processes[id] = process
     process.id = id
     state.instances[id] = []
+    state.processesList.push(process)
   }
 }
 
@@ -198,4 +196,3 @@ export default {
   actions,
   mutations
 }
-

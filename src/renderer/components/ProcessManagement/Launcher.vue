@@ -75,7 +75,7 @@
 
 <script>
 import StreamViewer from './StreamViewer'
-import { mapActions, mapGetters } from 'vuex'
+import { mapActions, mapState } from 'vuex'
 import status from '../../constants'
 
 export default {
@@ -90,14 +90,13 @@ export default {
   },
 
   computed: {
+    ...mapState({
+      processes: 'processesList'
+    }),
     currentStatus: function () {
-      if (this.processesLength > 0)
-        return this.processesFromIndex(this.activeProcess).status
-    },
-    ...mapGetters({
-      processLength: 'processesLength',
-      processes: 'processList'
-    })
+      if (this.processes.length > 0)
+        return this.processes[this.activeProcess].status
+    }
   },
 
   methods: {

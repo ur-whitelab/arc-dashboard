@@ -39,8 +39,9 @@ export default {
       fps: 0
     }
   },
-  mounted: function () {
-    this.$bus.$on('process-status', (p) => {
+  watch: {
+    process: function (newV, oldV) {
+      const p = newV
       if (p.name === 'Vision') {
         if (p.status === status.RUNNING) {
           // we know the vision process is running, now we update our img tag
@@ -61,7 +62,7 @@ export default {
         } else
           this.videoAvailable = false
       }
-    })
+    }
   },
   methods: {
     updateFPS: _.debounce(async function () {
