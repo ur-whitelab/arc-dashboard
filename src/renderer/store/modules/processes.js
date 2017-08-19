@@ -5,12 +5,14 @@ import Vue from 'vue'
 
 import * as types from '../mutation-types'
 import status from '../../constants'
-import db from '../../../db/datastore'
+import loaddb from '../../../db/datastore'
 import docker from '../../docker'
 
 import log from 'electron-log'
 import { exec } from 'child_process'
-import {ipcRenderer} from 'electron'
+import {ipcRenderer, remote} from 'electron'
+
+const db = loaddb(remote.app.getPath('userData'))
 
 async function startExeProcess (p, updateStatus, addInstance) {
   // build command string

@@ -35,7 +35,7 @@ new Vue({
     // load processes into store
     this.$log.info(`Adding in processes:`)
     const docs = await this.$db.findPromise({ type: 'process' })
-    for (let d of docs)
+    for (const d of docs)
       this.$store.commit(types.PROCESS_INSERT, d)
     this.$log.info(`Adding in ${docs.length} processes`)
   }
