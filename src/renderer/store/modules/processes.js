@@ -179,6 +179,9 @@ const actions = {
     // now actually remove that instance
     commit(types.PROCESS_INSTANCE_POP, {id: id})
     commit(types.PROCESS_STATUS, { id: id, status: status.READY })
+  },
+  updateArgument ({commit}, payload) {
+    commit(types.PROCESS_CMD_UPDATE, payload)
   }
 }
 
@@ -208,6 +211,14 @@ const mutations = {
     Vue.set(state.processes, id, process)
     process.id = id
     Vue.set(state.instances, id, [])
+  },
+
+  [types.PROCESS_CMD_UPDATE] (state, {id, index, value}) {
+    const c = state.processes[id].cmd[index]
+    if (typeof c === 'object')
+      c.value = value
+    else
+      log.warn('Attempted to set non-object command value')
   }
 }
 

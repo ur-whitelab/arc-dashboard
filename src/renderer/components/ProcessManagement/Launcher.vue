@@ -33,20 +33,26 @@
               <div class="panel-block">
                 <p class="control has-icons-left">
 
-                  <input :id="'arg' + i" onClick="this.select();" class="input is-small" type="text" v-model="arg.value" v-on:keyup.13="document.getElementById('arg' + (i + 1)).focus()" v-on:keyup.9="document.getElementById('arg' + (i + 1)).focus()">
+                  <input :id="'arg' + i" onClick="this.select();"
+                  class="input is-small" type="text" v-model="arg.value"
+                  v-on:keyup.13="this.$refs['arg' + (i + 1)].focus()"
+                  v-on:keyup.9="this.$refs['arg' + (i + 1)].focus()">
                   <span class="icon is-small is-left">
                     <i class="fa fa-arrow-up"></i>
                   </span>
                 </p>
               </div>
             </template>
-              <a :disabled="processes[activeProcess].status !== status.READY" :id="'arg' + (1 + argPrompt.length)" class="button panel-block is-success control-launch" @click="startProcess(processes[activeProcess].id)">
+              <a :disabled="processes[activeProcess].status !== status.READY"
+              :id="'arg' + (1 + argPrompt.length)" class="button panel-block is-success control-launch"
+              @click="startProcess(processes[activeProcess].id)">
                 <span class="panel-icon">
                   <i class="fa fa-play"></i>
                 </span>
                 Launch {{processes[activeProcess].name}}
               </a>
-              <a :disabled="processes[activeProcess].status !== status.RUNNING" :id="'arg' + (2 + argPrompt.length)" class="button panel-block is-warning control-launch" @click="stopProcess(processes[activeProcess].id)">
+              <a :disabled="processes[activeProcess].status !== status.RUNNING" :id="'arg' + (2 + argPrompt.length)"
+              class="button panel-block is-warning control-launch" @click="stopProcess(processes[activeProcess].id)">
                 <span class="panel-icon">
                   <i class="fa fa-stop"></i>
                 </span>
@@ -65,6 +71,7 @@
 </template>
 
 <script>
+import _ from 'lodash'
 import StreamViewer from './StreamViewer'
 import { mapActions, mapGetters } from 'vuex'
 import status from '../../constants'
@@ -93,10 +100,24 @@ export default {
   methods: {
     ...mapActions([
       'startProcess',
-      'stopProcess'
+      'stopProcess',
+      'updateArgument'
     ])
   },
   watch: {
+
+    argPrompt: {
+      handler: _.debounce(function (newV) {
+        for (let a of newV) {
+          if (a.context === 'cmd')
+            this.updateArgument({id: a.id, index: a.index, value: a.value})
+          else if (a.context === 'binds')
+            this.$log.error('Updating binds for docker container is not implemented')
+        }
+      }, 200),
+      deep: true
+    },
+
     activeProcess: function (newV, oldV) {
       this.argPrompt = []
 
@@ -106,16 +127,16 @@ export default {
       // process argument string
       this.argPrompt = []
       if ('cmd' in p) {
-        let j = 0
         for (let i = 0; i < p.cmd.length; i++) {
           if (p.cmd[i] instanceof Object) {
-            // add j so we can reference latter
+            // copy so we don't accidentally modify
             const a = Object.assign({}, p.cmd[i])
-            a.index = j
+            // need to store index and id references for updating
+            a.index = i
+            a.id = p.id
             a.context = 'cmd'
             a.value = a.default
             this.argPrompt.push(a)
-            j++
           }
         }
       } else if (p.docker_id !== null) {
