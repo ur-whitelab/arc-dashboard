@@ -47,11 +47,9 @@ export default {
     ]),
     cameraRunning: function () {
       const p = this.processFromId('p5')
-      if (p) {
-        console.log('Camera running: ' + p.status === status.RUNNING)
-        // return this.processFromId('p5').status === status.RUNNING
+      if (p)
         return p.status === status.RUNNING
-      } else
+      else
         return false
     }
   },

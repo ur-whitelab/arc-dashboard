@@ -19,25 +19,8 @@
     "name": "Projection",
     "status": "ready",
     "docker_id": null,
-    "cmd": ["ar-project"]
-  },
-  {
-    "_id": "p4",
-    "type": "process",
-    "name": "Camera",
-    "status": "disabled",
-    "docker_id": null,
-    "cmd": [
-      "vlc",
-      {
-        "name": "video source",
-        "description": "VLC specific arg to find webcam.",
-        "default": "v4l2:///dev/video0"
-      },
-      "-I dummy",
-      "--sout",
-      "#transcode{vcodec=theo,vb=800,fps=30,scale=1,acodec=none}:standard{access=http,mux=ogg,dst=:10030/stream.ogg}"],
-    "cmd2": ["vlc", "-I dummy", null, "--sout", ":sout=#transcode{vcodec=h264,acodec=mpga,ab=128,channels=2,samplerate=44100}:http{mux=ffmpeg{mux=flv},dst=:8080/stream} :sout-keep"]
+    "cmd": "ar-project",
+    "args": {}
   },
   {
     "_id": "pcustom",
@@ -45,18 +28,19 @@
     "name": "Custom",
     "status": "ready",
     "docker_id": null,
-    "cmd": [
-      {
-        "name": "exe",
+    "cmd": "",
+    "args": {
+      "exe": {
+        "flag": "",
         "description": "Executable",
         "default": "ls"
       },
-      {
-        "name": "arg",
+      "arg": {
+        "flag": "-",
         "description": "Arguments",
-        "default": "-l"
+        "default": "l"
       }
-    ]
+    }
   },
   {
     "_id": "p5",
@@ -64,18 +48,29 @@
     "name": "Vision",
     "status": "ready",
     "docker_id": null,
-    "cmd": [
-      "arcvision",
-      "--hostname", "*",
-      "--zmq-port", "5001",
-      "--server-port", "10030",
-      "--video-filename",
-      {
-        "name": "video-filename",
-        "description": "path to video file",
+    "cmd": "arcvision",
+    "args": {
+      "hostname": {
+        "flag": "--hostname",
+        "description": "Hostname",
+        "default": "*"
+      },
+      "zmq-port": {
+        "flag": "--zmq-port",
+        "description": "ZMQ PUb port",
+        "default": "5001"
+      },
+      "video-filename": {
+        "flag": "--video-filename",
+        "description": "Video or Webcam Path",
         "default": "0"
+      },
+      "server-port": {
+        "flag": "--server-port",
+        "description": "Port for server",
+        "default": "10030"
       }
-    ]
+    }
   },
   {
     "_id": "cdocker",

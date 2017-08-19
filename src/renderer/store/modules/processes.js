@@ -14,17 +14,18 @@ import {ipcRenderer} from 'electron'
 
 async function startExeProcess (p, updateStatus, addInstance) {
   // build command string
-  let cmd = []
-  for (const c of p.cmd) {
-    if (typeof c === 'object') {
-      if ('value' in c)
-        cmd.push(c.value)
-      else
-        cmd.push(c.default)
-    } else
-      cmd.push(c)
+  let cmd = [p.cmd]
+  for (const key in p.args) {
+    const a = p.args[key]
+    cmd.push(a.flag)
+    if ('value' in a)
+      cmd.push(a.value)
+    else
+      cmd.push(a.default)
   }
-  // TODO: do this
+
+  // trim
+  cmd = _.filter(cmd, (o) => { return o.length > 0 })
 
   updateStatus(status.LOADING)
   log.info('Spawning with ' + cmd.join(' '))
@@ -213,12 +214,9 @@ const mutations = {
     Vue.set(state.instances, id, [])
   },
 
-  [types.PROCESS_CMD_UPDATE] (state, {id, index, value}) {
-    const c = state.processes[id].cmd[index]
-    if (typeof c === 'object')
-      c.value = value
-    else
-      log.warn('Attempted to set non-object command value')
+  [types.PROCESS_CMD_UPDATE] (state, {id, key, value}) {
+    const c = state.processes[id].args[key]
+    Vue.set(c, 'value', value)
   }
 }
 

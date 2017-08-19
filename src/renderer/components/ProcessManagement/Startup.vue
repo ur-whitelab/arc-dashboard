@@ -1,16 +1,16 @@
-<template>
+  <template>
   <table class="table is-bordered is-striped is-narrow is-fullwidth">
     <thead>
       <tr>
-        <th>Processes</th>
+        <th>Name</th>
         <th>Status </th>
       </tr>
     </thead>
     <tbody>
-      <template v-for="p in processes">
+      <template v-for="i in processIds">
         <tr>
-          <td> {{p.status}}</td>
-          <td> {{p.status}}</td>
+          <td> {{processes[i].name}}</td>
+          <td> {{processes[i].status}}</td>
         </tr>
       </template>
     </tbody>
@@ -19,6 +19,7 @@
 
 <script>
 import status from '../../constants'
+import { mapState } from 'vuex'
 
 export default {
   name: 'startup',
@@ -26,8 +27,13 @@ export default {
     return {
       status: status,
       startup: [],
-      processes: []
+      processIds: []
     }
+  },
+  computed: {
+    ...mapState({
+      processes: state => state.processes.processes
+    })
   },
   mounted: async function () {
     // load our processes from db
@@ -37,7 +43,7 @@ export default {
         for (const id of this.startup.steps) {
           this.$db.findOne({ _id: id }, (err, doc) => {
             if (!err)
-              this.processes.push(doc)
+              this.processIds.push(doc._id)
           })
         }
       }

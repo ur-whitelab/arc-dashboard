@@ -108,9 +108,9 @@ export default {
 
     argPrompt: {
       handler: _.debounce(function (newV) {
-        for (let a of newV) {
+        for (const a of newV) {
           if (a.context === 'cmd')
-            this.updateArgument({id: a.id, index: a.index, value: a.value})
+            this.updateArgument({id: a.id, key: a.key, value: a.value})
           else if (a.context === 'binds')
             this.$log.error('Updating binds for docker container is not implemented')
         }
@@ -127,17 +127,13 @@ export default {
       // process argument string
       this.argPrompt = []
       if ('cmd' in p) {
-        for (let i = 0; i < p.cmd.length; i++) {
-          if (p.cmd[i] instanceof Object) {
-            // copy so we don't accidentally modify
-            const a = Object.assign({}, p.cmd[i])
-            // need to store index and id references for updating
-            a.index = i
-            a.id = p.id
-            a.context = 'cmd'
-            a.value = a.default
-            this.argPrompt.push(a)
-          }
+        for (const key in p.args) {
+          const value = p.args[key]
+          const a = Object.assign({}, value)
+          a.id = p.id
+          a.key = key
+          a.value = a.default
+          this.argPrompt.push(a)
         }
       } else if (p.docker_id !== null) {
         // docker process
