@@ -14,8 +14,13 @@ log.info('Loading existing db from ' +
 
 // load defaults but do not override
 
-for (let r of dbDefaults)
-  db.insert(r) // will not load if key exists
+for (let r of dbDefaults) {
+  const result = db.insert(r) // will not load if key exists
+  if (result)
+    log.info(`Added default ${r._id}`)
+  else
+    log.info(`Did not override loaded ${r._id}`)
+}
 
 function findPromisfy (...args) {
   return new Promise((resolve, reject) => {

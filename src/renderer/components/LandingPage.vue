@@ -25,7 +25,6 @@
                 </div>
             </article>
             <article class="is-child tile box notification is-outlined">
-              <p class="title"> Camera View </p>
                 <camera> </camera>
             </article>
           </div>

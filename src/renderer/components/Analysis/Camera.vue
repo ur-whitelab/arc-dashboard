@@ -18,6 +18,7 @@
 <script>
 import status from '../../constants'
 import axios from 'axios'
+import { mapGetters } from 'vuex'
 import _ from 'lodash'
 
 export default {
@@ -34,34 +35,47 @@ export default {
   data () {
     return {
       port: '',
+      status: status,
       videoAvailable: false,
       url: '',
       fps: 0
     }
   },
-  watch: {
-    process: function (newV, oldV) {
-      const p = newV
-      if (p.name === 'Vision') {
-        if (p.status === status.RUNNING) {
-          // we know the vision process is running, now we update our img tag
-          // it would be possible to attach host/port to vision process, but this
-          // is possible too
+  computed: {
+    ...mapGetters([
+      'processFromId'
+    ]),
+    cameraRunning: function () {
+      const p = this.processFromId('p5')
+      if (p) {
+        console.log('Camera running: ' + p.status === status.RUNNING)
+        // return this.processFromId('p5').status === status.RUNNING
+        return p.status === status.RUNNING
+      } else
+        return false
+    }
+  },
 
-          this.$db.find({ _id: 'cnetwork' }, (err, docs) => {
-            if (err)
-              throw err
-            const c = docs[0]
-            this.port = c.ports.video
-            // we add timestamp just in case this is called multiple times
-            // add start-up delay for webcam
-            this.url = 'http://' + this.host + ':' + this.port + '/stream.mjpg?t=' + new Date().getTime()
-            this.videoAvailable = true
-            this.updateFPS()
-          })
-        } else
-          this.videoAvailable = false
-      }
+  watch: {
+    cameraRunning: function (newV, oldV) {
+      if (newV) {
+        // we know the vision process is running, now we update our img tag
+        // it would be possible to attach host/port to vision process, but this
+        // is possible too
+
+        this.$db.find({ _id: 'cnetwork' }, (err, docs) => {
+          if (err)
+            throw err
+          const c = docs[0]
+          this.port = c.ports.video
+          // we add timestamp just in case this is called multiple times
+          // add start-up delay for webcam
+          this.url = 'http://' + this.host + ':' + this.port + '/stream.mjpg?t=' + new Date().getTime()
+          this.videoAvailable = true
+          this.updateFPS()
+        })
+      } else
+        this.videoAvailable = false
     }
   },
   methods: {

@@ -32,11 +32,15 @@ new Vue({
   template: '<App/>',
   mounted: function () {
     // load processes into store
+    this.$log.info(`Adding in processes:`)
     this.$db.find({ type: 'process' }, (err, docs) => {
       if (!err) {
         for (let d of docs)
           this.$store.commit(types.PROCESS_INSERT, d)
         this.$log.info(`Adding in ${docs.length} processes`)
+      } else {
+        this.$log.error('Failed to find any processes')
+        throw err
       }
     })
   }
