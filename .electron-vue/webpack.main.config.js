@@ -9,6 +9,7 @@ const webpack = require('webpack')
 const BabiliWebpackPlugin = require('babili-webpack-plugin')
 
 let mainConfig = {
+  context: __dirname + '../src',
   entry: {
     main: path.join(__dirname, '../src/main/index.js')
   },

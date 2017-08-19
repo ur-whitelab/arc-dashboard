@@ -1,9 +1,10 @@
 import Vue from 'vue'
 import axios from 'axios'
+import {remote} from 'electron'
 
 import App from './App'
 import router from './router'
-import db from './datastore'
+import db from '../db/datastore'
 import docker from './docker'
 import log from 'electron-log'
 import store from './store'
@@ -16,7 +17,7 @@ if (!process.env.IS_WEB) Vue.use(require('vue-electron'))
 Vue.http = Vue.prototype.$http = axios
 Vue.config.productionTip = false
 // make db accessible
-Vue.prototype.$db = db
+Vue.prototype.$db = db(remote.app.getPath('userData'))
 
 // make accessible
 Vue.prototype.$docker = docker
@@ -30,18 +31,12 @@ new Vue({
   router,
   store,
   template: '<App/>',
-  mounted: function () {
+  created: async function () {
     // load processes into store
     this.$log.info(`Adding in processes:`)
-    this.$db.find({ type: 'process' }, (err, docs) => {
-      if (!err) {
-        for (let d of docs)
-          this.$store.commit(types.PROCESS_INSERT, d)
-        this.$log.info(`Adding in ${docs.length} processes`)
-      } else {
-        this.$log.error('Failed to find any processes')
-        throw err
-      }
-    })
+    const docs = await this.$db.findPromise({ type: 'process' })
+    for (let d of docs)
+      this.$store.commit(types.PROCESS_INSERT, d)
+    this.$log.info(`Adding in ${docs.length} processes`)
   }
 }).$mount('#app')

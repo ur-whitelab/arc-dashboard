@@ -1,6 +1,8 @@
 'use strict'
 
 import { app, BrowserWindow } from 'electron'
+import server from './server/server'
+import loadDb from '../db/datastore'
 
 /**
  * Set `__static` path to static files in production
@@ -30,6 +32,15 @@ function createWindow () {
     mainWindow = null
   })
 }
+
+const db = loadDb(app.getPath('userData'))
+// load db and start server
+db.findOne({_id: 'cnetwork'}, (err, doc) => {
+  if (!err) {
+    // start server
+    server.listen(doc.ports.app)
+  }
+})
 
 app.on('ready', createWindow)
 

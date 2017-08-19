@@ -5,7 +5,7 @@ import Vue from 'vue'
 
 import * as types from '../mutation-types'
 import status from '../../constants'
-import db from '../../datastore'
+import db from '../../../db/datastore'
 import docker from '../../docker'
 
 import log from 'electron-log'
