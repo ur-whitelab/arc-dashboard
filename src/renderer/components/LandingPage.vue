@@ -37,7 +37,7 @@
         <div class="tile is-ancestor">
            <div class="tile is-5 is-parent">
             <div class="is-child tile box">
-              <SVG src='http://172.17.0.2/analysis/test.svg'></SVG>
+              <ZMQStatus> </ZMQStatus>
             </div>
           </div>
         </div>
@@ -50,10 +50,11 @@
   import Launcher from './ProcessManagement/Launcher'
   import Startup from './ProcessManagement/Startup'
   import Camera from './Analysis/Camera'
+  import ZMQStatus from './ProcessManagement/ZMQStatus'
 
 export default {
     name: 'landing-page',
-    components: { Launcher, Camera, Startup },
+    components: { Launcher, Camera, Startup, ZMQStatus },
     methods: {
       open (link) {
         this.$electron.shell.openExternal(link)

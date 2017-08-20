@@ -3,8 +3,35 @@
     "_id": "p1",
     "type": "process",
     "name": "Simulation",
-    "status": "disabled",
-    "docker_id": null
+    "status": "ready",
+    "docker_id": null,
+    "cmd": "arcreactor",
+    "args": {
+      "hostname": {
+        "flag": "--cc-hostname",
+        "description": "Hostname ",
+        "default": "localhost",
+        "editable": true
+      },
+      "zmq-pub-port": {
+        "flag": "--zmq-pub-port",
+        "description": "ZMQ Pub port",
+        "default": "8075",
+        "editable": false
+      },
+      "zmq-sub-port": {
+        "flag": "--zmq-sub-port",
+        "description": "ZMQ Sub port",
+        "default": "8076",
+        "editable": false
+      },
+      "server-port": {
+        "flag": "--server-port",
+        "description": "Port for server",
+        "default": "8078",
+        "editable": false
+      }
+    }
   },
   {
     "_id": "p2",
@@ -33,12 +60,14 @@
       "exe": {
         "flag": "",
         "description": "Executable",
-        "default": "ls"
+        "default": "ls",
+        "editable": true
       },
       "arg": {
         "flag": "-",
         "description": "Arguments",
-        "default": "l"
+        "default": "l",
+        "editable": true
       }
     }
   },
@@ -50,25 +79,35 @@
     "docker_id": null,
     "cmd": "arcvision",
     "args": {
-      "hostname": {
-        "flag": "--hostname",
-        "description": "Hostname",
-        "default": "*"
-      },
-      "zmq-port": {
-        "flag": "--zmq-port",
-        "description": "ZMQ PUb port",
-        "default": "5001"
-      },
       "video-filename": {
         "flag": "--video-filename",
         "description": "Video or Webcam Path",
-        "default": "0"
+        "default": "0",
+        "editable": true
+      },
+      "hostname": {
+        "flag": "--cc-hostname",
+        "description": "Hostname ",
+        "default": "localhost",
+        "editable": true
+      },
+      "zmq-pub-port": {
+        "flag": "--zmq-pub-port",
+        "description": "ZMQ Pub port",
+        "default": "8075",
+        "editable": false
+      },
+      "zmq-sub-port": {
+        "flag": "--zmq-sub-port",
+        "description": "ZMQ Sub port",
+        "default": "8076",
+        "editable": false
       },
       "server-port": {
         "flag": "--server-port",
         "description": "Port for server",
-        "default": "10030"
+        "default": "8077",
+        "editable": false
       }
     }
   },
@@ -85,10 +124,11 @@
   {
     "_id": "cnetwork",
     "ports": {
-      "zmq": 5000,
-      "vision-zmq": 5001,
+      "zmqPub": 8075,
+      "zmqSub": 8076,
       "app": 8080,
-      "video": 10030
+      "video": 8077,
+      "simulation": 8078
     }
   },
   {

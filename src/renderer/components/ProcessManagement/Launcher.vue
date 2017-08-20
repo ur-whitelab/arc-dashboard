@@ -34,7 +34,7 @@
                 <p class="control has-icons-left">
 
                   <input :id="'arg' + i" onClick="this.select();"
-                  class="input is-small" type="text" v-model="arg.value"
+                  class="input is-small" type="text" :disabled="!arg.editable" v-model="arg.value"
                   v-on:keyup.13="this.$refs['arg' + (i + 1)].focus()"
                   v-on:keyup.9="this.$refs['arg' + (i + 1)].focus()">
                   <span class="icon is-small is-left">

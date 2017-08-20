@@ -2,6 +2,7 @@
 
 import { app, BrowserWindow } from 'electron'
 import server from './server/server'
+import forwarder from './server/forwarder'
 import loadDb from '../db/datastore'
 
 /**
@@ -28,19 +29,20 @@ function createWindow () {
 
   mainWindow.loadURL(winURL)
 
+  const db = loadDb(app.getPath('userData'))
+  // load db and start server
+  db.findOne({_id: 'cnetwork'}, (err, doc) => {
+    if (!err) {
+      // start server
+      server.listen(doc.ports.app)
+      forwarder('*', doc.ports.zmqSub, doc.ports.zmqPub, mainWindow)
+    }
+  })
+
   mainWindow.on('closed', () => {
     mainWindow = null
   })
 }
-
-const db = loadDb(app.getPath('userData'))
-// load db and start server
-db.findOne({_id: 'cnetwork'}, (err, doc) => {
-  if (!err) {
-    // start server
-    server.listen(doc.ports.app)
-  }
-})
 
 app.on('ready', createWindow)
 

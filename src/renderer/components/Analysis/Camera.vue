@@ -86,7 +86,7 @@ export default {
         if (this.videoAvailable)
           this.updateFPS()
       }
-    }, 200)
+    }, 2000)
   }
 
 }
