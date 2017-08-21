@@ -22,7 +22,7 @@ function load (userData) {
       log.info(`Did not override loaded ${r._id}`)
   }
 
-  function findPromisfy (...args) {
+  function findPromise (...args) {
     return new Promise((resolve, reject) => {
       db.find(...args, (err, docs) => {
         if (err)
@@ -33,7 +33,7 @@ function load (userData) {
     })
   }
 
-  db.findPromise = findPromisfy
+  db.findPromise = findPromise
 
   return db
 }

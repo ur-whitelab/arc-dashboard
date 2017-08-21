@@ -87,6 +87,11 @@ export default {
     }
   },
 
+  mounted: function () {
+    // why is this necessary?!
+    this.updateArgs()
+  },
+
   computed: {
     ...mapGetters({
       processes: 'processesList'
@@ -102,28 +107,12 @@ export default {
       'startProcess',
       'stopProcess',
       'updateArgument'
-    ])
-  },
-  watch: {
-
-    argPrompt: {
-      handler: _.debounce(function (newV) {
-        for (const a of newV) {
-          if (a.context === 'cmd')
-            this.updateArgument({id: a.id, key: a.key, value: a.value})
-          else if (a.context === 'binds')
-            this.$log.error('Updating binds for docker container is not implemented')
-        }
-      }, 200),
-      deep: true
-    },
-
-    activeProcess: function (newV, oldV) {
+    ]),
+    updateArgs: function () {
       this.argPrompt = []
-
       const p = this.processes[this.activeProcess]
       if (p.status === status.DISABLED)
-        this.activeProcess = oldV
+        return false
       // process argument string
       this.argPrompt = []
       if ('cmd' in p) {
@@ -154,6 +143,26 @@ export default {
           }
         })
       }
+      return true
+    }
+  },
+  watch: {
+
+    argPrompt: {
+      handler: _.debounce(function (newV) {
+        for (const a of newV) {
+          if (a.context === 'cmd')
+            this.updateArgument({id: a.id, key: a.key, value: a.value})
+          else if (a.context === 'binds')
+            this.$log.error('Updating binds for docker container is not implemented')
+        }
+      }, 200),
+      deep: true
+    },
+
+    activeProcess: function (newV, oldV) {
+      if (!this.updateArgs())
+        newV = oldV
     }
   }
 }

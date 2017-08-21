@@ -38,5 +38,6 @@ new Vue({
     for (const d of docs)
       this.$store.commit(types.PROCESS_INSERT, d)
     this.$log.info(`Adding in ${docs.length} processes`)
+    this.$mount('#app')
   }
-}).$mount('#app')
+})

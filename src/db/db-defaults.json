@@ -37,14 +37,14 @@
     "_id": "p2",
     "type": "process",
     "name": "Analysis",
-    "status": "ready",
+    "status": "disabled",
     "docker_id": "danalysis"
   },
   {
     "_id": "p3",
     "type": "process",
     "name": "Projection",
-    "status": "ready",
+    "status": "disabled",
     "docker_id": null,
     "cmd": "ar-project",
     "args": {}
@@ -139,6 +139,6 @@
   },
   {
     "_id": "startup",
-    "steps": ["p1", "p2", "p3", "p5"]
+    "steps": ["p1", "p5"]
   }
 ]

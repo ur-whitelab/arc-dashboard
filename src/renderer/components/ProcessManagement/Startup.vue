@@ -79,9 +79,9 @@ export default {
       'stopProcess'
     ]),
 
-    startall: async function () {
+    startall: function () {
       for (const id of this.processIds)
-        await this.startProcess(id)
+        setTimeout(() => { this.startProcess(id) })
     },
 
     stopall: async function () {
