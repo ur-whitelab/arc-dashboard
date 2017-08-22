@@ -32,11 +32,8 @@
               </p>
               <div class="panel-block">
                 <p class="control has-icons-left">
-
-                  <input :id="'arg' + i" onClick="this.select();"
-                  class="input is-small" type="text" :disabled="!arg.editable" v-model="arg.value"
-                  v-on:keyup.13="this.$refs['arg' + (i + 1)].focus()"
-                  v-on:keyup.9="this.$refs['arg' + (i + 1)].focus()">
+                  <input :ref="'arg' + i" onClick="select();"
+                  class="input is-small" type="text" :disabled="!arg.editable" v-model="arg.value">
                   <span class="icon is-small is-left">
                     <i class="fa fa-arrow-up"></i>
                   </span>
@@ -44,14 +41,14 @@
               </div>
             </template>
               <a :disabled="processes[activeProcess].status !== status.READY"
-              :id="'arg' + (1 + argPrompt.length)" class="button panel-block is-success control-launch"
+              :ref="'arg' + (1 + argPrompt.length)" class="button panel-block is-success control-launch"
               @click="startProcess(processes[activeProcess].id)">
                 <span class="panel-icon">
                   <i class="fa fa-play"></i>
                 </span>
                 Launch {{processes[activeProcess].name}}
               </a>
-              <a :disabled="processes[activeProcess].status !== status.RUNNING" :id="'arg' + (2 + argPrompt.length)"
+              <a :disabled="processes[activeProcess].status !== status.RUNNING" :ref="'arg' + (2 + argPrompt.length)"
               class="button panel-block is-warning control-launch" @click="stopProcess(processes[activeProcess].id)">
                 <span class="panel-icon">
                   <i class="fa fa-stop"></i>
@@ -122,6 +119,7 @@ export default {
           a.id = p.id
           a.key = key
           a.value = a.default
+          a.context = 'cmd'
           this.argPrompt.push(a)
         }
       } else if (p.docker_id !== null) {
@@ -149,7 +147,7 @@ export default {
   watch: {
 
     argPrompt: {
-      handler: _.debounce(function (newV) {
+      handler: _.throttle(function (newV) {
         for (const a of newV) {
           if (a.context === 'cmd')
             this.updateArgument({id: a.id, key: a.key, value: a.value})

@@ -19,11 +19,11 @@ async function startExeProcess (p, updateStatus, addInstance) {
   let cmd = [p.cmd]
   for (const key in p.args) {
     const a = p.args[key]
-    cmd.push(a.flag)
-    if ('value' in a)
-      cmd.push(a.value)
-    else
-      cmd.push(a.default)
+    if ('value' in a) {
+      if (a.value.length > 0)
+        cmd.push(a.flag + a.value)
+    } else
+      cmd.push(a.flag + a.default)
   }
 
   // trim
