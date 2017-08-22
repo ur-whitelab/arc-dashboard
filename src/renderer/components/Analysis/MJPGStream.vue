@@ -77,7 +77,6 @@ export default {
         // we know the process is running. Need to see if port is viable or
         // do we need to look into db for it
         if (typeof this.port === 'string' && this.myPort === '') {
-          console.log('HERERR')
           const docs = await this.$db.findPromise({ _id: 'cnetwork' })
           if (this.port in docs[0].ports)
             this.myPort = docs[0].ports[this.port]

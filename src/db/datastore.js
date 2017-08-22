@@ -3,25 +3,15 @@ import path from 'path'
 import dbDefaults from './db-defaults'
 import log from 'electron-log'
 
-function load (userData) {
+async function load (userData) {
   const db = new Datastore({
-    autoload: true,
-    filename: path.join(userData, '/artable/data.db')
+    autoload: false
+    // filename: path.join(userData, '/artable/data.db')
   })
 
-  log.info('Loading existing db from ' +
-      path.join(userData, '/artable/data.db'))
+  log.info('Loading existing db from ' + path.join(userData, '/artable/data.db'))
 
-  // load defaults but do not override
-
-  for (let r of dbDefaults) {
-    const result = db.insert(r) // will not load if key exists
-    if (result)
-      log.info(`Added default ${r._id}`)
-    else
-      log.info(`Did not override loaded ${r._id}`)
-  }
-
+  // attach some promised versions
   function findPromise (...args) {
     return new Promise((resolve, reject) => {
       db.find(...args, (err, docs) => {
@@ -33,7 +23,31 @@ function load (userData) {
     })
   }
 
+  function insertPromise (...args) {
+    return new Promise((resolve, reject) => {
+      db.insert(...args, (err, docs) => {
+        if (err)
+          reject(err)
+        else
+          resolve(docs)
+      })
+    })
+  }
+
   db.findPromise = findPromise
+  db.insertPromise = insertPromise
+
+  // load defaults but do not override
+
+  for (let r of dbDefaults) {
+    try {
+      await db.insertPromise(r) // will not load if key exists
+      log.info(`Added default ${r._id}`)
+    } catch (err) {
+      log.info(`Did not override loaded ${r._id}`)
+      continue
+    }
+  }
 
   return db
 }
