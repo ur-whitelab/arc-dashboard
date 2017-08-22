@@ -20,10 +20,22 @@ async function startExeProcess (p, updateStatus, addInstance) {
   for (const key in p.args) {
     const a = p.args[key]
     if ('value' in a) {
-      if (a.value.length > 0)
-        cmd.push(a.flag + a.value)
-    } else
-      cmd.push(a.flag + a.default)
+      if (a.value.length > 0) {
+        if (a.flag.length === 1)
+          cmd.push(a.flag + a.value)
+        else {
+          cmd.push(a.flag)
+          cmd.push(a.value)
+        }
+      }
+    } else {
+      if (a.flag.length === 1)
+        cmd.push(a.flag + a.default)
+      else {
+        cmd.push(a.flag)
+        cmd.push(a.default)
+      }
+    }
   }
 
   // trim
