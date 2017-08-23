@@ -108,6 +108,12 @@
         "description": "Port for server",
         "default": "8077",
         "editable": false
+      },
+      "template-include": {
+        "flag": "--template-include",
+        "description": "Directory containing JPG templates",
+        "default": ".",
+        "editable": true
       }
     }
   },
