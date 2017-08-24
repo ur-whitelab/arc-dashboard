@@ -1,17 +1,30 @@
 <template>
   <div class="camera-container container is-fluid">
     <div class="">
-      <h2 class="title is-capitalized has-text-centered"> {{processFromId(process).name}} Stream</h2>
+      <h2 class="title is-capitalized has-text-centered"> {{processFromId(process).name}} Stream {{streamName}}</h2>
       <template v-if="videoAvailable">
         <h3 class="subtitle  has-text-centered"> {{fps}} fps </h3>
         <img id="video" class="video" :src="url">
-        <template v-if="maxIndex > 1">
-          <div class="field is-horizontal">
-            <div class="control">
-              <label class="label"> Stream {{(streamIndex)}} of {{maxIndex}}</label>
-              <input class="input field" v-model="streamIndex" type="number" min="1" :max="maxIndex">
-            </div>
-          </div>
+        <template v-if="videoAvailable">
+          <table class="table">
+            <tbody>
+              <template v-for="(value, key) in streamChoices">
+                <tr>
+                  <th> {{key}} </th>
+                  <template v-for="stream in value">
+                      <td>
+                        <div class="control">
+                          <label class="radio">
+                            <input type="radio" :value="stream" v-model="streamName">
+                            {{stream}}
+                          </label>
+                        </div>
+                      </td>
+                  </template>
+                </tr>
+              </template>
+            </tbody>
+          </table>
         </template>
       </template>
     </div>
@@ -49,8 +62,8 @@ export default {
       myPort: '',
       status: status,
       videoAvailable: false,
-      streamIndex: 1,
-      maxIndex: 1,
+      streamName: 'raw',
+      streamChoices: {},
       fps: 0
     }
   },
@@ -66,7 +79,7 @@ export default {
         return false
     },
     url: function () {
-      return 'http://' + this.host + ':' + this.myPort + '/' + (this.streamIndex - 1) + '/stream.mjpg?t=' + new Date().getTime()
+      return 'http://' + this.host + ':' + this.myPort + '/' + this.streamName + '/stream.mjpg?t=' + new Date().getTime()
     }
   },
   watch: {
@@ -93,8 +106,8 @@ export default {
     updateStats: _.debounce(async function () {
       try {
         const response = await axios.get('http://' + this.host + ':' + this.myPort + '/stats')
-        if ('stream_number' in response.data)
-          this.maxIndex = response.data.stream_number // add one because we 1-index for prettiness
+        if ('stream_names' in response.data)
+          this.streamChoices = response.data.stream_names
         const fpsRaw = Number(response.data.frequency)
         this.fps = Math.round(fpsRaw)
       } finally {
