@@ -1,32 +1,46 @@
 <template>
   <div class="container is-fluid">
     <h1 class="title"> Vision Controller </h1>
-    <div class="field">
-      <label class="label">Mode</label>
-      <div class="control">
-        <div class="select">
-          <select v-model="settings.mode">
-            <option v-for="option in modeChoices" :value="option">
-              {{ option }}
-            </option>
-          </select>
+    <template v-if="videoAvailable">
+      <div class="columns">
+        <div class="column">
+          <div class="field">
+            <label class="label">Mode</label>
+            <div class="control">
+              <div class="select">
+                <select v-model="settings.mode">
+                  <option v-for="option in modeChoices" :value="option">
+                    {{ option }}
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="field is-grouped">
+            <div class="control">
+              <a class="button is-primary" :disabled="!settings.pause" @click="settings.pause = false">
+                <span class="icon">
+                  <i class="fa fa-play"></i>
+                </span>
+              </a>
+              <a class="button is-primary" :disabled="settings.pause" @click="settings.pause = true">
+                <span class="icon">
+                  <i class="fa fa-pause"></i>
+                </span>
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="column">
+          <template v-if="settings.mode == 'background'">
+            <background :settings.sync="settings"></background>
+          </template>
+          <template v-if="settings.mode == 'training'">
+            <training :settings.sync="settings"></training>
+          </template>
         </div>
       </div>
-    </div>
-    <div class="field is grouped">
-      <div class="control">
-        <a class="button is-primary" :disabled="!settings.pause" @click="settings.pause = false">
-          <span class="icon">
-            <i class="fa fa-play"></i>
-          </span>
-        </a>
-        <a class="button is-primary" :disabled="settings.pause" @click="settings.pause = true">
-          <span class="icon">
-            <i class="fa fa-pause"></i>
-          </span>
-        </a>
-      </div>
-    </div>
+    </template>
   </div>
 </template>
 
@@ -35,9 +49,12 @@ import status from '../../constants'
 import axios from 'axios'
 import { mapGetters } from 'vuex'
 import _ from 'lodash'
+import Background from './VisionControls/Background'
+import Training from './VisionControls/Training'
 
 export default {
   name: 'vision',
+  components: { Background, Training },
   props: {
     port: null,
     process: String,
@@ -62,19 +79,16 @@ export default {
     ...mapGetters([
       'processFromId'
     ]),
-    cameraRunning: function () {
+    visionRunning: function () {
       const p = this.processFromId(this.process)
       if (p)
         return p.status === status.RUNNING
       else
         return false
-    },
-    url: function () {
-      return 'http://' + this.host + ':' + this.myPort + '/' + this.streamName + '/stream.mjpg?t=' + new Date().getTime()
     }
   },
   watch: {
-    cameraRunning: async function (newV, oldV) {
+    visionRunning: async function (newV, oldV) {
       if (newV) {
         // we add timestamp just in case this is called multiple times
         // add start-up delay for webcam
@@ -94,7 +108,8 @@ export default {
     },
     settings: {
       handler: async function () {
-        await this.sendSettings()
+        if (this.visionRunning)
+          await this.sendSettings()
       },
       deep: true
     }
@@ -102,11 +117,16 @@ export default {
   methods: {
     updateStats: async function () {
       const response = await axios.get('http://' + this.host + ':' + this.myPort + '/stats')
-      if ('modes' in response.data)
+      if ('modes' in response.data) {
         this.modeChoices = response.data.modes
+        this.settings['mode'] = response.data.settings.mode
+        this.settings['pause'] = response.data.settings.pause === 'True'
+      }
     },
     sendSettings: _.debounce(async function () {
       await axios.post('http://' + this.host + ':' + this.myPort + '/settings', JSON.stringify(this.settings))
+      // need to remove action if we had one
+      this.settings['action'] = ''
     }, 100)
   }
 

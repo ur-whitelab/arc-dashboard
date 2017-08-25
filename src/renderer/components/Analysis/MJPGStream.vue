@@ -79,7 +79,7 @@ export default {
         return false
     },
     url: function () {
-      return 'http://' + this.host + ':' + this.myPort + '/' + this.streamName + '/stream.mjpg?t=' + new Date().getTime()
+      return 'http://' + this.host + ':' + this.myPort + '/stream/' + this.streamName + '.mjpg?t=' + new Date().getTime()
     }
   },
   watch: {
@@ -110,6 +110,8 @@ export default {
           this.streamChoices = response.data.stream_names
         const fpsRaw = Number(response.data.frequency)
         this.fps = Math.round(fpsRaw)
+      } catch (err) {
+        // pass
       } finally {
         if (this.videoAvailable)
           this.updateStats()

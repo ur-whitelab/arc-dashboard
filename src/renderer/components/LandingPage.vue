@@ -35,12 +35,12 @@
           </div>
         </div>
         <div class="tile is-ancestor">
-          <div class="tile is-4 is-parent">
+          <div class="tile is-6 is-parent">
             <div class="is-child tile box">
-              <MJPGStream process="p1" port="simulation"> </MJPGStream>
+              <Vision process="p5" port="video"> </Vision>
             </div>
           </div>
-          <div class="tile is-4 is-parent">
+          <div class="tile is-6 is-parent">
             <article class="is-child tile box notification is-outlined">
               <MJPGStream process="p5" port="video"> </MJPGStream>
             </article>
@@ -49,7 +49,7 @@
         <div class="tile is-ancestor">
           <div class="tile is-4 is-parent">
             <div class="is-child tile box">
-              <Vision process="p5" port="video"> </Vision>
+              <MJPGStream process="p1" port="simulation"> </MJPGStream>
             </div>
           </div>
         </div>
