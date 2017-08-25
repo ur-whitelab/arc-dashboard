@@ -103,7 +103,7 @@ export default {
     }
   },
   methods: {
-    updateStats: _.debounce(async function () {
+    updateStats: _.throttle(async function () {
       try {
         const response = await axios.get('http://' + this.host + ':' + this.myPort + '/stats')
         if ('stream_names' in response.data)

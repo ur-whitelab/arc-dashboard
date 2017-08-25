@@ -44,7 +44,13 @@
             <article class="is-child tile box notification is-outlined">
               <MJPGStream process="p5" port="video"> </MJPGStream>
             </article>
-
+          </div>
+        </div>
+        <div class="tile is-ancestor">
+          <div class="tile is-4 is-parent">
+            <div class="is-child tile box">
+              <Vision process="p5" port="video"> </Vision>
+            </div>
           </div>
         </div>
       </div>
@@ -57,10 +63,11 @@
   import Startup from './ProcessManagement/Startup'
   import MJPGStream from './Analysis/MJPGStream'
   import ZMQStatus from './ProcessManagement/ZMQStatus'
+  import Vision from './ProcessManagement/Vision'
 
 export default {
     name: 'landing-page',
-    components: { Launcher, Startup, ZMQStatus, MJPGStream },
+    components: { Launcher, Startup, ZMQStatus, MJPGStream, Vision },
     methods: {
       open (link) {
         this.$electron.shell.openExternal(link)
