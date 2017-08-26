@@ -4,18 +4,20 @@
     <template v-if="videoAvailable">
       <div class="columns">
         <div class="column">
+
           <div class="field">
             <label class="label">Mode</label>
             <div class="control">
               <div class="select">
                 <select v-model="settings.mode">
-                  <option v-for="option in modeChoices" :value="option">
+                  <option v-for="option in modes" :value="option">
                     {{ option }}
                   </option>
                 </select>
               </div>
             </div>
           </div>
+
           <div class="field is-grouped">
             <div class="control">
               <a class="button is-primary" :disabled="!settings.pause" @click="settings.pause = false">
@@ -30,13 +32,27 @@
               </a>
             </div>
           </div>
+
+          <div class="field">
+            <label class="label">Feature Calculator</label>
+            <div class="control">
+              <div class="select">
+                <select v-model="settings.descriptor">
+                  <option v-for="option in descriptors" :value="option">
+                    {{ option }}
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+
         </div>
         <div class="column">
           <template v-if="settings.mode == 'background'">
-            <background :settings.sync="settings"></background>
+            <background :settings.sync="settings" :remoteSettings="remoteSettings"></background>
           </template>
           <template v-if="settings.mode == 'training'">
-            <training :settings.sync="settings"></training>
+            <training :settings.sync="settings" :remoteSettings="remoteSettings"></training>
           </template>
         </div>
       </div>
@@ -71,8 +87,10 @@ export default {
       myPort: '',
       status: status,
       videoAvailable: false,
-      settings: {pause: false, mode: 'background'},
-      modeChoices: ['background']
+      settings: {mode: 'background', pause: false, descriptor: ''},
+      descriptors: [],
+      modes: [],
+      remoteSettings: {modes: []}
     }
   },
   computed: {
@@ -107,27 +125,33 @@ export default {
         this.videoAvailable = false
     },
     settings: {
-      handler: async function () {
-        if (this.visionRunning)
-          await this.sendSettings()
-      },
+      handler: _.debounce(async function (newV, oldV) {
+        if (this.visionRunning) {
+          await this.sendSettings(JSON.stringify(newV))
+          // this will send extra settings, but I don't know how to fix. I dumb
+          this.settings.action = ''
+          // need to remove action if we had one
+          await this.updateStats()
+        }
+      }, 200),
       deep: true
     }
   },
   methods: {
-    updateStats: async function () {
+    updateStats: _.debounce(async function () {
       const response = await axios.get('http://' + this.host + ':' + this.myPort + '/stats')
-      if ('modes' in response.data) {
-        this.modeChoices = response.data.modes
-        this.settings['mode'] = response.data.settings.mode
-        this.settings['pause'] = response.data.settings.pause === 'True'
+      if ('settings' in response.data) {
+        // align these. Will trigger a sendsettings, but that's ok
+        this.remoteSettings = response.data.settings
+        this.modes = response.data.modes
+        this.descriptors = response.data.descriptors
       }
-    },
-    sendSettings: _.debounce(async function () {
-      await axios.post('http://' + this.host + ':' + this.myPort + '/settings', JSON.stringify(this.settings))
-      // need to remove action if we had one
-      this.settings['action'] = ''
-    }, 100)
+      // ensure we are called sometime in the future
+      setTimeout(this.updateStats, 2000)
+    }, 200),
+    sendSettings: async function (message) {
+      await axios.post('http://' + this.host + ':' + this.myPort + '/settings', message)
+    }
   }
 
 }

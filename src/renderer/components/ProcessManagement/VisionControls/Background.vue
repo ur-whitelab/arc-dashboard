@@ -15,7 +15,7 @@
 <script>
 export default {
   name: 'background',
-  props: ['settings'],
+  props: ['settings', 'remoteSettings'],
   data () {
     return {
       collecting: false

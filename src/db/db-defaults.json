@@ -114,6 +114,12 @@
         "description": "Directory containing JPG templates",
         "default": ".",
         "editable": true
+      },
+      "crop": {
+        "flag": "--crop",
+        "description": "[x] [y] [w] [h] for crop",
+        "default": "",
+        "editable": true
       }
     }
   },

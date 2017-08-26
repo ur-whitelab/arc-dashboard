@@ -35,7 +35,7 @@
           </div>
         </div>
         <div class="tile is-ancestor">
-          <div class="tile is-6 is-parent">
+          <div class="tile is-4 is-parent">
             <div class="is-child tile box">
               <Vision process="p5" port="video"> </Vision>
             </div>
