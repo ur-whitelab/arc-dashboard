@@ -87,7 +87,7 @@ export default {
       myPort: '',
       status: status,
       videoAvailable: false,
-      settings: {mode: 'background', pause: false, descriptor: ''},
+      settings: {mode: 'background', pause: false, descriptor: 'BRISK'},
       descriptors: [],
       modes: [],
       remoteSettings: {modes: []}
