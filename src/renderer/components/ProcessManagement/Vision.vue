@@ -45,14 +45,24 @@
               </div>
             </div>
           </div>
+          <div class="field">
+            <label class="label"> Keypoint Threshold </label>
+            <div class="control">
+              <input type="number"
+                :min="settings.descriptor_threshold_bounds[0]"
+                :max="settings.descriptor_threshold_bounds[1]"
+                :step="settings.descriptor_threshold_step"
+                v-model.lazy="settings.descriptor_threshold">
+            </div>
+          </div>
 
         </div>
         <div class="column">
           <template v-if="settings.mode == 'background'">
-            <background :settings.sync="settings" :remoteSettings="remoteSettings"></background>
+            <background :settings.sync="settings" :sendSettings="sendSettings"></background>
           </template>
           <template v-if="settings.mode == 'training'">
-            <training :settings.sync="settings" :remoteSettings="remoteSettings"></training>
+            <training :settings.sync="settings" :sendSettings="sendSettings"></training>
           </template>
         </div>
       </div>
@@ -87,10 +97,9 @@ export default {
       myPort: '',
       status: status,
       videoAvailable: false,
-      settings: {mode: 'background', pause: false, descriptor: 'BRISK'},
+      settings: {mode: 'background', pause: false, descriptor: 'BRISK', descriptor_threshold: 30},
       descriptors: [],
-      modes: [],
-      remoteSettings: {modes: []}
+      modes: []
     }
   },
   computed: {
@@ -103,6 +112,19 @@ export default {
         return p.status === status.RUNNING
       else
         return false
+    },
+    // this is so I can easily watch it
+    descriptor: function () {
+      return this.settings.descriptor
+    },
+    mode: function () {
+      return this.settings.mode
+    },
+    descriptorThreshhold: function () {
+      return this.settings.descriptor_threshold
+    },
+    pause: function () {
+      return this.settings.pause
     }
   },
   watch: {
@@ -124,33 +146,38 @@ export default {
       } else
         this.videoAvailable = false
     },
-    settings: {
-      handler: _.debounce(async function (newV, oldV) {
-        if (this.visionRunning) {
-          await this.sendSettings(JSON.stringify(newV))
-          // this will send extra settings, but I don't know how to fix. I dumb
-          this.settings.action = ''
-          // need to remove action if we had one
-          await this.updateStats()
-        }
-      }, 200),
-      deep: true
+    // reset threshdold
+    descriptor: function () {
+      this.settings.descriptor_threshold = 0
+      // send
+      this.sendSettings()
+    },
+    mode: function () {
+      this.sendSettings()
+    },
+    descriptorThreshhold: function () {
+      this.sendSettings()
+    },
+    pause: function () {
+      this.sendSettings()
     }
+
   },
   methods: {
     updateStats: _.debounce(async function () {
       const response = await axios.get('http://' + this.host + ':' + this.myPort + '/stats')
       if ('settings' in response.data) {
         // align these. Will trigger a sendsettings, but that's ok
-        this.remoteSettings = response.data.settings
+        this.settings = response.data.settings
         this.modes = response.data.modes
         this.descriptors = response.data.descriptors
       }
       // ensure we are called sometime in the future
       setTimeout(this.updateStats, 2000)
     }, 200),
-    sendSettings: async function (message) {
-      await axios.post('http://' + this.host + ':' + this.myPort + '/settings', message)
+    sendSettings: async function () {
+      await axios.post('http://' + this.host + ':' + this.myPort + '/settings', JSON.stringify(this.settings))
+      this.updateStats()
     }
   }
 

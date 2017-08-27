@@ -6,19 +6,19 @@
         <input class="input" type="text" placeholder="Image Name/Label" v-model="label"></input>
       </div>
       <div class="control">
-        <button class="button" :disabled="!settings.pause" @click="mySettings.action = 'label'"> Label </button>
+        <button class="button" :disabled="!settings.pause" @click="settings.action = 'label'"> Label </button>
       </div>
     </div>
     <div class="field">
       <label class="label">Polygon</label>
       <div class="control">
-        <input class="input" type="number" min="1" :max="remoteSettings.training_poly_len" v-model="trainingPolyIndex">
+        <input class="input" type="number" min="1" :max="settings.training_poly_len" v-model="trainingPolyIndex">
       </div>
     </div>
     <div class="field">
       <label class="label">Rectangle</label>
       <div class="control">
-        <input class="input" type="number" min="1" :max="remoteSettings.training_rect_len" v-model="trainingRectIndex">
+        <input class="input" type="number" min="1" :max="settings.training_rect_len" v-model="trainingRectIndex">
       </div>
     </div>
   </div>
@@ -27,7 +27,7 @@
 <script>
 export default {
   name: 'training',
-  props: ['settings', 'remoteSettings'],
+  props: ['settings', 'sendSettings'],
   data () {
     return {
       collecting: false,
@@ -41,6 +41,7 @@ export default {
     mySettings: {
       handler: function (newV) {
         this.$emit('update:settings', {...this.settings, ...this.mySettings, training_label: this.label})
+        this.sendSettings()
       },
       deep: true
     },

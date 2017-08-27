@@ -15,7 +15,7 @@
 <script>
 export default {
   name: 'background',
-  props: ['settings', 'remoteSettings'],
+  props: ['settings', 'sendSettings'],
   data () {
     return {
       collecting: false
@@ -27,6 +27,7 @@ export default {
         this.$emit('update:settings', {...this.settings, action: 'start_background'})
       else
         this.$emit('update:settings', {...this.settings, action: 'complete_background'})
+      this.sendSettings()
     }
   }
 }
