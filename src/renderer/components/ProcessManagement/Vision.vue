@@ -64,6 +64,9 @@
           <template v-if="settings.mode == 'training'">
             <training :settings.sync="settings" :sendSettings="sendSettings" :settingsResponse="settingsResponse"></training>
           </template>
+          <template v-if="settings.mode == 'extent'">
+            <extent :settings.sync="settings" :sendSettings="sendSettings"></extent>
+          </template>
         </div>
       </div>
     </template>
@@ -77,10 +80,11 @@ import { mapGetters } from 'vuex'
 import _ from 'lodash'
 import Background from './VisionControls/Background'
 import Training from './VisionControls/Training'
+import Extent from './VisionControls/Extent'
 
 export default {
   name: 'vision',
-  components: { Background, Training },
+  components: { Background, Training, Extent },
   props: {
     port: null,
     process: String,
