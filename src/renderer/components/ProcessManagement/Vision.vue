@@ -166,7 +166,7 @@ export default {
   },
   methods: {
     updateStats: _.debounce(async function () {
-      try{
+      try {
         const response = await axios.get('http://' + this.host + ':' + this.myPort + '/stats')
         if ('settings' in response.data) {
           // align these. Will trigger a sendsettings, but that's ok
@@ -180,7 +180,7 @@ export default {
       }
     }, 200),
     sendSettings: async function () {
-      try{
+      try {
         const response = await axios.post('http://' + this.host + ':' + this.myPort + '/settings', JSON.stringify(this.settings))
         this.settingsResponse = response.data
         console.log(this.settingsResponse)
@@ -188,7 +188,6 @@ export default {
       } catch (err) {
         this.$log.error(err)
       }
-
     }
   }
 
