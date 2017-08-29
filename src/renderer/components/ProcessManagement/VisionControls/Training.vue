@@ -3,10 +3,10 @@
     <h1 class="subtitle"> Training Mode </h1>
     <div class="field has-addons">
       <div class="control">
-        <input class="input" type="text" placeholder="Image Name/Label" v-model="label"></input>
+        <input class="input" :class="{'is-success': settingsResponse   === 'label_set', 'is-danger': settingsResponse   === 'label_fail'}"  type="text" placeholder="Image Name/Label" v-model="label"></input>
       </div>
       <div class="control">
-        <button class="button" :disabled="!settings.pause" @click="settings.action = 'label'"> Label </button>
+        <button class="button" :disabled="!settings.pause || settingsResponse.includes('label')" @click="mySettings.action = 'label'"> Label </button>
       </div>
     </div>
     <div class="field">
@@ -27,7 +27,7 @@
 <script>
 export default {
   name: 'training',
-  props: ['settings', 'sendSettings'],
+  props: ['settings', 'sendSettings', 'settingsResponse'],
   data () {
     return {
       collecting: false,

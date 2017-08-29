@@ -25,7 +25,7 @@ async function startExeProcess (p, updateStatus, addInstance) {
           cmd.push(a.flag + a.value)
         else {
           cmd.push(a.flag)
-          cmd.push(a.value)
+          cmd.push('"' + a.value + '"')
         }
       }
     } else {

@@ -62,7 +62,7 @@
             <background :settings.sync="settings" :sendSettings="sendSettings"></background>
           </template>
           <template v-if="settings.mode == 'training'">
-            <training :settings.sync="settings" :sendSettings="sendSettings"></training>
+            <training :settings.sync="settings" :sendSettings="sendSettings" :settingsResponse="settingsResponse"></training>
           </template>
         </div>
       </div>
@@ -97,9 +97,10 @@ export default {
       myPort: '',
       status: status,
       videoAvailable: false,
-      settings: {mode: 'background', pause: false, descriptor: 'BRISK', descriptor_threshold: 30},
+      settings: {mode: 'background', pause: false, descriptor: 'BRISK', descriptor_threshold: 30, descriptor_threshold_bounds: (0, 30), descriptor_threshold_step: 1},
       descriptors: [],
-      modes: []
+      modes: [],
+      settingsResponse: ''
     }
   },
   computed: {
@@ -165,19 +166,29 @@ export default {
   },
   methods: {
     updateStats: _.debounce(async function () {
-      const response = await axios.get('http://' + this.host + ':' + this.myPort + '/stats')
-      if ('settings' in response.data) {
-        // align these. Will trigger a sendsettings, but that's ok
-        this.settings = response.data.settings
-        this.modes = response.data.modes
-        this.descriptors = response.data.descriptors
+      try{
+        const response = await axios.get('http://' + this.host + ':' + this.myPort + '/stats')
+        if ('settings' in response.data) {
+          // align these. Will trigger a sendsettings, but that's ok
+          this.settings = response.data.settings
+          this.modes = response.data.modes
+          this.descriptors = response.data.descriptors
+        }
+        // ensure we are called sometime in the future
+      } finally {
+        setTimeout(this.updateStats, 2000)
       }
-      // ensure we are called sometime in the future
-      setTimeout(this.updateStats, 2000)
     }, 200),
     sendSettings: async function () {
-      await axios.post('http://' + this.host + ':' + this.myPort + '/settings', JSON.stringify(this.settings))
-      this.updateStats()
+      try{
+        const response = await axios.post('http://' + this.host + ':' + this.myPort + '/settings', JSON.stringify(this.settings))
+        this.settingsResponse = response.data
+        console.log(this.settingsResponse)
+        this.updateStats()
+      } catch (err) {
+        this.$log.error(err)
+      }
+
     }
   }
 
