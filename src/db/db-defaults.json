@@ -103,6 +103,12 @@
         "default": "8076",
         "editable": false
       },
+      "zmq-projector-port": {
+        "flag": "--zmq-projector-port",
+        "description": "Port for projector",
+        "default": "8079",
+        "editable": false
+      },
       "server-port": {
         "flag": "--server-port",
         "description": "Port for server",
