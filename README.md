@@ -3,10 +3,15 @@
 > AR Table Dashboard
 
 #### Build Setup
+Remember that electron is built against specific versions of node, so
+be wary of just blindly upgrading everything.
 
 ``` bash
 # install dependencies
 npm install
+# rebuild electron
+ npm rebuild zeromq --runtime=electron --target=1.6.17
+
 
 # serve with hot reload at localhost:9080
 npm run dev
