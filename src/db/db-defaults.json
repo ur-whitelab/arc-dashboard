@@ -121,9 +121,9 @@
         "default": ".",
         "editable": true
       },
-      "crop": {
-        "flag": "--crop",
-        "description": "[x] [y] [w] [h] for crop",
+      "output-video": {
+        "flag": "--output-video",
+        "description": "A path to save output video",
         "default": "",
         "editable": true
       }
