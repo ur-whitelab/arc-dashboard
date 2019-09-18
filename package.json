@@ -63,7 +63,7 @@
     "electron-log": "^2.2.7",
     "express": "^4.15.4",
     "font-awesome": "^4.7.0",
-    "lodash": "^4.17.4",
+    "lodash": "^4.17.13",
     "merge-stream": "^1.0.1",
     "nedb": "^1.8.0",
     "node-sass": "^4.5.3",
