@@ -30,9 +30,9 @@
   version "17.1.0"
   resolved "https://registry.yarnpkg.com/@tweenjs/tween.js/-/tween.js-17.1.0.tgz#87e889dfd57a6ecbcf54401938c0422e80b87306"
 
-"@types/node@^7.0.18":
-  version "7.0.39"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-7.0.39.tgz#8aced4196387038113f6f9aa4014ab4c51edab3c"
+"@types/node@^8.0.24":
+  version "8.10.66"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-8.10.66.tgz#dd035d409df322acc83dff62a602f12a5783bbb3"
 
 JSONStream@0.10.0:
   version "0.10.0"
@@ -2703,11 +2703,11 @@ electron-to-chromium@^1.2.7, electron-to-chromium@^1.3.17:
   version "1.3.17"
   resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.17.tgz#41c13457cc7166c5c15e767ae61d86a8cacdee5d"
 
-electron@^1.7.2:
-  version "1.7.5"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-1.7.5.tgz#065a3102bf8b87102df50c50985fefe6c569045b"
+electron@^1.6.17:
+  version "1.8.8"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-1.8.8.tgz#a90cddb075291f49576993e6f5c8bb4439301cae"
   dependencies:
-    "@types/node" "^7.0.18"
+    "@types/node" "^8.0.24"
     electron-download "^3.0.1"
     extract-zip "^1.0.3"
 
@@ -8053,8 +8053,8 @@ xtend@~2.1.1:
     object-keys "~0.4.0"
 
 y18n@^3.2.1:
-  version "3.2.1"
-  resolved "https://registry.yarnpkg.com/y18n/-/y18n-3.2.1.tgz#6d15fba884c08679c0d77e88e7759e811e07fa41"
+  version "3.2.2"
+  resolved "https://registry.yarnpkg.com/y18n/-/y18n-3.2.2.tgz#85c901bd6470ce71fc4bb723ad209b70f7f28696"
 
 yallist@^2.1.2:
   version "2.1.2"
