@@ -61,7 +61,7 @@
     "dockerode": "^2.5.0",
     "electron-localshortcut": "^2.0.2",
     "electron-log": "^2.2.7",
-    "express": "^4.15.4",
+    "express": "^4.17.3",
     "font-awesome": "^4.7.0",
     "lodash": "^4.17.4",
     "merge-stream": "^1.0.1",
